@@ -142,7 +142,6 @@ parameters = pd.DataFrame(samples, columns=['TE_blade_ang_hub_s1',
                                             'mass_flow_rate',
                                             ])
 
-
 # ######################################################################################################################
 # fix data: add rules as needed
 # ######################################################################################################################
@@ -152,7 +151,7 @@ parameters['shroud_rad_s1'] = parameters['inlet_hub_rad_s1'] + 0.0146791
 
 # round number of s1 blades to closest int
 parameters = parameters.round({'number_of_main_blades_s1': 0})
-
+ 
 # Diffuser s1: Rpin<Rout; >Rin;
 parameters['Rpin_s1'] = parameters['impeller_outlet_rad_s1'] +\
                         np.random.random() * (parameters['outlet_avg_rad_s1'] - parameters['impeller_outlet_rad_s1'] )
