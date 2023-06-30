@@ -1,28 +1,107 @@
-# Author: Al Shahriar
-# June 28 2023
-# %%
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+__author__ = "Al Shahriar"
+__copyright__ = "Copyright Danfoss TUrbocor 2023, The Meanline ML Project"
+__credits__ = ["Al Shahriar"]
+__license__ = "Private"
+__version__ = "1.0.0"
+__maintainer__ = "Al Shahriar"
+__email__ = "al.shahriar@danfoss.com"
+__status__ = "Pre-production"
+
+"""Detail description of TT_post_process.py
+
+@Usage:
+    Execute after obtaining the results from TurboTides
+    Section 1 requires user inspection
+        Check 1: Batch number
+        Check 2: Append option or build new model
+        Check 2: File format csv(ASCII) or pickle(binary)
+        Check 3: Order of the TT output columns should be the following:
+            ['Machine pressure ratio (T-S)',
+             'Machine power',
+             'Isentropic machine efficiency (T-S)',
+             'Inlet mass flow',
+             'Inlet mass flow corrected',
+             'RPM',
+             'Number of main blades',
+             'TE Blade Angle Hub',
+             'TE Blade Angle Tip',
+             'Inclination angle',
+             'Hub radius',
+             'Shroud radius',
+             'Impeller radius',
+             'Impeller width',
+             'Diffuser radius',
+             'Diffuser width',
+             'Throat area',
+             'Exit pipe diameter',]        
+@Date: 
+    June 30 2023
+
+@Files
+    Required:
+        TT Input files
+        TT Output files
+    Optional:
+        compressor.py
+@Output
+    Files:
+        Batch data (both training and testing)
+        Accumulated data (both training and testing)
+"""
+# %% Section 0: Loading modules and libraries
+# Built-in/Generic Imports
+import os
+import shutil
+from datetime import datetime
+# Libs
 import numpy as np
 import pandas as pd
+# User-owned modules
 from compressor import Compressor
-# %% Reading the data
-# Inputs to TT
+# %% Section 1: Reading the data
+# Reading the inputs to TT
+# Make sure that your batch number is correct
 batch_number = 0
-if 0:
+# If you want to append the current batch data to the previous batches.
+# This flag is usually True
+append_flag = bool(True);
+
+# Select the method type to handle file
+# 0: for csv file
+# 1: pickle file: faster and saves memory
+read_method = 1;
+
+print("Batch number is", batch_number)
+
+if read_method==0:
     # inside TT, right click on the paramatric study table, select export as csv
-    data_in = pd.read_csv("../tt_input/batch_"+str(batch_number)+".csv").T
+    file_format = ".csv"
+    data_in = pd.read_csv(r"../tt_input/batch_"+str(batch_number)+file_format).T
     read_method = 0
+    # make sure the following variables and their values align with data_in
+    i_TE_blade_ang_hub_in = 0;
+    i_TE_blade_ang_tip_in = 1;
+    i_LE_Clearance_in = 4;
+    i_TE_Clearance_in = 5;
+    i_Rpin_by_Rin_in = 12;
+    i_Bpin_by_Rin_in = 13;
 else:
     # if created using py script
-    data_in = pd.read_pickle("random_parameters.pkl")
+    file_format = ".pkl"
+    data_in = pd.read_pickle(r"../tt_input/random_parameters_"+str(batch_number)+file_format)
     read_method = 1
-# Outputs of TT
-data_out_raw = pd.read_csv("../tt_output/batch_"+str(batch_number)+".csv",index_col='Parameter').T
-# %% 
-# Removing unnecessary rows
-data_out = data_out_raw.drop(["Object","Unit","Run1_dp"],axis = 0)
 
-# renaming the column - one column has duplicate name
-data_out_cols = data_out.columns.tolist()
+# Reding the outputs of TT
+# right click on performance table - select export or save as
+data_out_raw = pd.read_csv(r"../tt_output/batch_"+str(batch_number)+".csv",index_col='Parameter').T
+
+# Renaming the column - one column has duplicate name.
+# Check if the column numbers are matching with column titles.
+# The values tells how the columns are ordered in TT
+# TT does not properly write the column name in the prerformance table, so we
+# have to rename them.
 i_pressure_ratio_out = 0
 i_machine_power = 1
 i_efficiency_out = 2
@@ -45,6 +124,18 @@ i_Bpin_out = 19
 i_LE_Clearance_out = 20;
 i_TE_Clearance_out = 21;
 
+# Choose the upper bound and lower bound to filter out the data
+pressure_ratio_min = 1.0;
+pressure_ratio_max = 5.0;
+
+efficiency_min = 0.2;
+efficiency_max = 1.0;
+# %% Section 2: Data formatting
+
+# Removing unnecessary rows in the TT output file
+data_out = data_out_raw.drop(["Object","Unit","Run1_dp"],axis = 0)
+
+data_out_cols = data_out.columns.tolist()
 TE_blade_ang_hub_txt ='TE Blade Angle Hub'
 TE_blade_ang_tip_txt ='TE Blade Angle Tip'
 if data_out_cols[i_TE_blade_ang_hub_out] == 'TE blade angle': data_out_cols[i_TE_blade_ang_hub_out] = TE_blade_ang_hub_txt
@@ -63,15 +154,11 @@ impl_width_txt = data_out_cols[i_impl_width_out]
 diff_radius_txt = data_out_cols[i_diff_radius_out]
 diff_width_txt = data_out_cols[i_diff_width_out]
 
-# %% Data indexing
-# TT does not return the results for the failed cases in the parametric study
-# column number in the csv - input for TT
-i_TE_blade_ang_hub_in = 0;
-i_TE_blade_ang_tip_in = 1;
-i_LE_Clearance_in = 4;
-i_TE_Clearance_in = 5;
-i_Rpin_by_Rin_in = 12;
-i_Bpin_by_Rin_in = 13;
+# %% Section 3: Data indexing
+# TT does not return the results for the failed cases in the parametric study.
+# It returns a column with the case number added to a string for successful runs.
+# We compare the input case number and output case number to figure out which
+# one fails.
 
 temp_Rpin = [];
 temp_Bpin = [];
@@ -101,7 +188,6 @@ for irow_out in range(0,nRows_out):
         temp_TE_blade_ang_hub.append(data_in.iloc[case_number].at["TE_blade_ang_hub_s1"])
         temp_TE_blade_ang_tip.append(data_in.iloc[case_number].at["TE_blade_ang_tip_s1"])
         
-
 data_out["Rpin"] = temp_Rpin
 data_out["Bpin"] = temp_Bpin
 data_out["LE Clearance"] = temp_LE_Clearance
@@ -109,13 +195,9 @@ data_out["TE Clearance"] = temp_TE_Clearance
 data_out[TE_blade_ang_hub_txt] = temp_TE_blade_ang_hub
 data_out[TE_blade_ang_tip_txt] = temp_TE_blade_ang_tip
 data_out_cols = data_out.columns.tolist()
-# %% Data cleaning
+# %% Section 4: Data cleaning
 
-pressure_ratio_min = 1.0;
-pressure_ratio_max = 5.0;
-
-efficiency_min = 0.5;
-efficiency_max = 1.0;
+# Filtering out the unrealistic data
 
 nRows_out = len(data_out.index)
 
@@ -154,10 +236,9 @@ data_out["Bad Samples"] = flag_rm
 data_out_filtered = data_out[data_out["Bad Samples"] == False]
 data_out_bad_samples = data_out[data_out["Bad Samples"] == True]
 
-# %% Seperating the testing and training data
-nRows = len(data_out_filtered)
-nTrain = int(0.8*nRows)
+# %% Section 5: Separating the testing and training data
 
+# Ordering the columns exactly the same way Krista did
 data_ordered = data_out_filtered.iloc[:, \
                                      [i_mass_flow_rate_out,i_RPM_out,i_n_main_blades_out, \
                                       i_TE_blade_ang_hub_out, i_TE_blade_ang_tip_out, \
@@ -167,16 +248,63 @@ data_ordered = data_out_filtered.iloc[:, \
                                       i_diff_radius_out, i_diff_width_out, \
                                       i_throat_area_out, i_pipe_diameter_out, \
                                       i_pressure_ratio_out,i_machine_power,i_efficiency_out]]
+
+    
+# Seperating 80 percent data for training
+nRows = len(data_out_filtered)
+nTrain = int(0.8*nRows)
 data_train = data_ordered.iloc[:nTrain,:]    
 data_test = data_ordered.iloc[nTrain+1:,:]
-data_train.to_csv('../training_data/train_parameters.csv', index=False)
-data_test.to_csv('../testing_data/test_parameters.csv', index=False)
-data_train.to_pickle("../training_data/train_parameters.pkl")
-data_test.to_pickle("../testing_data/test_parameters.pkl")
-# %% Trying something with Compressor class
+
+train_data_dir = r"../training_data"
+test_data_dir = r"../testing_data"    
+train_data_fname = "train_parameters"
+test_data_fname = "test_parameters"
+train_full_dir = os.path.join(train_data_dir, train_data_fname)
+test_full_dir = os.path.join(test_data_dir, test_data_fname)
+
+# saving the current batch data
+data_train.to_csv(train_full_dir+"_filtered_"+str(batch_number)+".csv", index=False)
+data_test.to_csv(test_full_dir+"_filtered_"+str(batch_number)+".csv", index=False)
+
+now = datetime.now()
+temp_str = now.strftime("%Y%m%d%H%M%S")
+
+if(append_flag):
+    if(os.path.isfile(train_full_dir+file_format)):
+        if read_method==0: data_train_saved = pd.read_csv(train_full_dir+file_format)
+        else: data_train_saved = pd.read_pickle(train_full_dir+file_format)
+        data_train = pd.concat([data_train_saved,data_train])
+    if(os.path.isfile(test_full_dir+file_format)):
+        if read_method==0: data_test_saved = pd.read_csv(test_full_dir+file_format)
+        else: data_test_saved = pd.read_pickle(test_full_dir+file_format)
+        data_test = pd.concat([data_test_saved,data_test])
+else:
+    # making a backup file of the exisitng train data
+    original = train_full_dir+file_format
+    target = os.path.join(train_data_dir, "backup_"+temp_str+"_"+train_data_fname+file_format)
+    if(os.path.isfile(original)):
+        shutil.copyfile(original, target)
+        # making a backup file of existing test data
+    original = test_full_dir+file_format
+    target = os.path.join(test_data_dir, "backup_"+temp_str+"_"+test_data_fname+file_format)
+    if(os.path.isfile(original)):
+        shutil.copyfile(original, target)
+
+# Writing them in appropriate format
+if read_method==0:
+    # writing the file
+    data_train.to_csv(train_full_dir+file_format, index=False)
+    data_test.to_csv(test_full_dir+file_format, index=False)
+else:
+    # writing the file
+    data_train.to_pickle(train_full_dir+file_format)
+    data_test.to_pickle(test_full_dir+file_format)
+
+# %% Section 6: Optional - Trying something with Compressor class
 # Not necessary - optional
 cpr = Compressor() 
-if 1:
+if 0:
     # TT does not return the results for the failed cases in the parametric study
     cpr.rpm = data_out["RPM"].values
     cpr.mass_flow_rate = data_out["Inlet mass flow"].values
@@ -215,7 +343,7 @@ if 1:
             cpr.s1.TE_blade_ang_hub.append(data_in.iloc[case_number].at["TE_blade_ang_hub_s1"])
             cpr.s1.TE_blade_ang_tip.append(data_in.iloc[case_number].at["TE_blade_ang_tip_s1"])
         
-    # make pretty
+    # make pretty in one table
     data_out_final = pd.DataFrame({
         "TE_blade_ang_hub": cpr.s1.TE_blade_ang_hub,
         "TE_blade_ang_tip": cpr.s1.TE_blade_ang_tip,
