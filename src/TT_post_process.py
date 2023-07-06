@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = "Al Shahriar"
-__copyright__ = "Copyright Danfoss TUrbocor 2023, The Meanline ML Project"
+__copyright__ = "Copyright Danfoss Turbocor 2023, The Meanline ML Project"
 __credits__ = ["Al Shahriar"]
 __license__ = "Private"
 __version__ = "1.0.0"
@@ -60,18 +60,19 @@ import numpy as np
 import pandas as pd
 # User-owned modules
 from compressor import Compressor
+from get_input_parameter_range import get_input_parameter_range
 # %% Section 1: Reading the data
 # Reading the inputs to TT
 # Make sure that your batch number is correct
 batch_number = 0
 # If you want to append the current batch data to the previous batches.
 # This flag is usually True
-append_flag = bool(True);
+append_flag = bool(False);
 
 # Select the method type to handle file
 # 0: for csv file
 # 1: pickle file: faster and saves memory
-read_method = 1;
+read_method = 0;
 
 print("Batch number is", batch_number)
 
@@ -181,12 +182,12 @@ for irow_out in range(0,nRows_out):
         temp_TE_blade_ang_hub.append(data_in.loc[case_number_txt].at[i_TE_blade_ang_hub_in])
         temp_TE_blade_ang_tip.append(data_in.loc[case_number_txt].at[i_TE_blade_ang_tip_in])
     else:
-        temp_Rpin.append(data_in.iloc[case_number].at["Rpin_s1"]*data_out[impl_radius_txt][irow_out])
-        temp_Bpin.append(data_in.iloc[case_number].at["Bpin_s1"]*data_out[impl_width_txt][irow_out])
-        temp_LE_Clearance.append(data_in.iloc[case_number].at["LE_Clearance_s1"])
-        temp_TE_Clearance.append(data_in.iloc[case_number].at["TE_Clearance_s1"])
-        temp_TE_blade_ang_hub.append(data_in.iloc[case_number].at["TE_blade_ang_hub_s1"])
-        temp_TE_blade_ang_tip.append(data_in.iloc[case_number].at["TE_blade_ang_tip_s1"])
+        temp_Rpin.append(data_in.iloc[case_number].at[r"stage1->vaneless1->Rpin/Rin"]*data_out[impl_radius_txt][irow_out])
+        temp_Bpin.append(data_in.iloc[case_number].at[r"stage1->vaneless1->Bpin/Bin"]*data_out[impl_width_txt][irow_out])
+        temp_LE_Clearance.append(data_in.iloc[case_number].at[r"stage1->impeller->blade->LE->LE Clearance"])
+        temp_TE_Clearance.append(data_in.iloc[case_number].at[r"stage1->impeller->blade->TE->TE Clearance"])
+        temp_TE_blade_ang_hub.append(data_in.iloc[case_number].at[r"stage1->impeller->blade->hubSect"])
+        temp_TE_blade_ang_tip.append(data_in.iloc[case_number].at[r"stage1->impeller->blade->tipSect"])
         
 data_out["Rpin"] = temp_Rpin
 data_out["Bpin"] = temp_Bpin
@@ -235,6 +236,11 @@ flag_rm = np.logical_or(flag_rm_eta,flag_rm_pr)
 data_out["Bad Samples"] = flag_rm
 data_out_filtered = data_out[data_out["Bad Samples"] == False]
 data_out_bad_samples = data_out[data_out["Bad Samples"] == True]
+
+
+# %% get input parameter ranges
+param_ranges = get_input_parameter_range()
+
 
 # %% Section 5: Separating the testing and training data
 
