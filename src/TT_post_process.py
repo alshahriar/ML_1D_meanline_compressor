@@ -168,6 +168,8 @@ temp_TE_Clearance = [];
 temp_TE_blade_ang_hub = [];
 temp_TE_blade_ang_tip = [];
 
+data_in.columns = data_in.columns.droplevel(1)
+
 nRows_out = len(data_out.index)
 nRows_in = len(data_in.index)
 for irow_out in range(0,nRows_out):
