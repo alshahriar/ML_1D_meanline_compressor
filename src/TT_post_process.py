@@ -72,7 +72,7 @@ append_flag = bool(False);
 # Select the method type to handle file
 # 0: for csv file
 # 1: pickle file: faster and saves memory
-read_method = 0;
+read_method = 1;
 
 print("Batch number is", batch_number)
 
@@ -91,7 +91,7 @@ if read_method==0:
 else:
     # if created using py script
     file_format = ".pkl"
-    data_in = pd.read_pickle(r"../tt_input/random_parameters_"+str(batch_number)+file_format)
+    data_in = pd.read_pickle(r"../tt_input/Batch_"+str(batch_number)+file_format)
     read_method = 1
 
 # Reding the outputs of TT
@@ -134,7 +134,7 @@ efficiency_max = 1.0;
 # %% Section 2: Data formatting
 
 # Removing unnecessary rows in the TT output file
-data_out = data_out_raw.drop(["Object","Unit","Run1_dp"],axis = 0)
+data_out = data_out_raw.drop(["Object","Unit","Run1_dp"],axis = 0, errors='ignore')
 
 data_out_cols = data_out.columns.tolist()
 TE_blade_ang_hub_txt ='TE Blade Angle Hub'
@@ -182,12 +182,12 @@ for irow_out in range(0,nRows_out):
         temp_TE_blade_ang_hub.append(data_in.loc[case_number_txt].at[i_TE_blade_ang_hub_in])
         temp_TE_blade_ang_tip.append(data_in.loc[case_number_txt].at[i_TE_blade_ang_tip_in])
     else:
-        temp_Rpin.append(data_in.iloc[case_number].at[r"stage1->vaneless1->Rpin/Rin"]*data_out[impl_radius_txt][irow_out])
-        temp_Bpin.append(data_in.iloc[case_number].at[r"stage1->vaneless1->Bpin/Bin"]*data_out[impl_width_txt][irow_out])
-        temp_LE_Clearance.append(data_in.iloc[case_number].at[r"stage1->impeller->blade->LE->LE Clearance"])
-        temp_TE_Clearance.append(data_in.iloc[case_number].at[r"stage1->impeller->blade->TE->TE Clearance"])
-        temp_TE_blade_ang_hub.append(data_in.iloc[case_number].at[r"stage1->impeller->blade->hubSect"])
-        temp_TE_blade_ang_tip.append(data_in.iloc[case_number].at[r"stage1->impeller->blade->tipSect"])
+        temp_Rpin.append(data_in.loc[case_number].at[r"stage1->vaneless1->Rpin/Rin"]*data_out[impl_radius_txt][irow_out])
+        temp_Bpin.append(data_in.loc[case_number].at[r"stage1->vaneless1->Bpin/Bin"]*data_out[impl_width_txt][irow_out])
+        temp_LE_Clearance.append(data_in.loc[case_number].at[r"stage1->impeller->blade->LE->LE Clearance"])
+        temp_TE_Clearance.append(data_in.loc[case_number].at[r"stage1->impeller->blade->TE->TE Clearance"])
+        temp_TE_blade_ang_hub.append(data_in.loc[case_number].at[r"stage1->impeller->blade->hubSect"])
+        temp_TE_blade_ang_tip.append(data_in.loc[case_number].at[r"stage1->impeller->blade->tipSect"])
         
 data_out["Rpin"] = temp_Rpin
 data_out["Bpin"] = temp_Bpin
@@ -342,12 +342,12 @@ if 0:
             cpr.s1.TE_blade_ang_tip.append(data_in.loc[case_number_txt].at[i_TE_blade_ang_tip_in])
         else:
             case_number = int(case_number_txt)
-            cpr.s1.Rpin.append(data_in.iloc[case_number].at["Rpin_s1"]*cpr.s1.impeller_outlet_rad[irow_out])
-            cpr.s1.Bpin.append(data_in.iloc[case_number].at["Bpin_s1"]*cpr.s1.impeller_outlet_width[irow_out])
-            cpr.s1.LE_Clearance.append(data_in.iloc[case_number].at["LE_Clearance_s1"])
-            cpr.s1.TE_Clearance.append(data_in.iloc[case_number].at["TE_Clearance_s1"])
-            cpr.s1.TE_blade_ang_hub.append(data_in.iloc[case_number].at["TE_blade_ang_hub_s1"])
-            cpr.s1.TE_blade_ang_tip.append(data_in.iloc[case_number].at["TE_blade_ang_tip_s1"])
+            cpr.s1.Rpin.append(data_in.loc[case_number].at["Rpin_s1"]*cpr.s1.impeller_outlet_rad[irow_out])
+            cpr.s1.Bpin.append(data_in.loc[case_number].at["Bpin_s1"]*cpr.s1.impeller_outlet_width[irow_out])
+            cpr.s1.LE_Clearance.append(data_in.loc[case_number].at["LE_Clearance_s1"])
+            cpr.s1.TE_Clearance.append(data_in.loc[case_number].at["TE_Clearance_s1"])
+            cpr.s1.TE_blade_ang_hub.append(data_in.loc[case_number].at["TE_blade_ang_hub_s1"])
+            cpr.s1.TE_blade_ang_tip.append(data_in.loc[case_number].at["TE_blade_ang_tip_s1"])
         
     # make pretty in one table
     data_out_final = pd.DataFrame({
