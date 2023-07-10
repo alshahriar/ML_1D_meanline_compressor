@@ -1,11 +1,16 @@
-# Author: Al Shahriar
+# Author: Krista Walters. Al Shahriar
 # Jun 21 2023
 
 # %% Load libraries
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+
+# System or built-in
 import os
+import warnings
+from datetime import datetime
+import shutil
 
 import matplotlib.pyplot as plt
 
@@ -39,37 +44,68 @@ from tensorflow.keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 from tensorflow.keras.utils import plot_model
 
 
-# %% Data Cleaning
+# %% inputs necessary from the user
 
 # Locations
-if 0:
-    train_data_dir = "../training_data/training_batch_173.csv"
-    test_data_dir = "../testing_data/testing_batch_173.csv"
-    read_method = 0
-else:
-    train_data_dir = "../training_data"
-    test_data_dir = "../testing_data"    
-    train_data_fname = "train_parameters.pkl"
-    test_data_fname = "test_parameters.pkl"
-    train_full_dir = os.path.join(train_data_dir, train_data_fname)
-    test_full_dir = os.path.join(test_data_dir, test_data_fname)
-    read_method  = 1
-
+read_method = 1
+clear_current_weights = 1 # will create a backup
 # Inputs
 in_col = 18 #Number of input columns
 out_col = 3 #Number of output columns
 
+# Number of hidden layers
+n_layers = 4;
+layers = [in_col,100,100,100,100,out_col];
+#Specify NN hyperparameters
+activation = 'tanh' #Activation function
+initial_weights = None #'he_uniform' #Initial guess of the model parameters
+reg = None #l1(0.0001) #regularizer
+learning_rate_user = 0.001;
+beta_1_user = 0.9
+epochs = 5 #Number of epochs
 
-#Import data
+if len(layers)!=n_layers+2:
+    import sys
+    sys.exit("Mismatch of n_layers and neuron list")
+
+# If want to run a model for smaller size
+trim_flag = 1
+if trim_flag==1:
+    nExample = 25000
+    warnings.warn("Data will trimmed for first "+str(nExample)+" examples")
+
+if read_method==0:
+    train_data_dir = r"../training_data/training_batch_173.csv"
+    test_data_dir = r"../testing_data/testing_batch_173.csv"
+    read_method = 0
+else:
+    train_data_dir = r"../training_data"
+    test_data_dir = r"../testing_data"    
+    train_data_fname = r"training_parameters.pkl"
+    test_data_fname = r"testing_parameters.pkl"
+    train_full_dir = os.path.join(train_data_dir, train_data_fname)
+    test_full_dir = os.path.join(test_data_dir, test_data_fname)
+    read_method  = 1
+
+# %% Import data
 if read_method==0:
     train_data = np.loadtxt(train_data_dir, delimiter=",")
     test_data = np.loadtxt(test_data_dir, delimiter=",")
+    train_data_df = pd.DataFrame(train_data)
+    test_data_df = pd.DataFrame(test_data)
 else:
     train_data_df = pd.read_pickle(train_full_dir)
     test_data_df = pd.read_pickle(test_full_dir)
     train_data = train_data_df.to_numpy()
     test_data = test_data_df.to_numpy()    
 
+# For faster analysis doing for 5000 examples only
+if trim_flag==1:
+    old_train_data = train_data
+    old_test_data = test_data
+    train_data = train_data[:nExample,:]
+    test_data = test_data[:int(nExample*0.2),:]
+    
 # Removing duplicates
 # define the location of the dataset
 # calculate duplicates
@@ -104,20 +140,26 @@ x_test = x_trans.transform(x_test)
 
 # %% Hyperparameters
 
-#Specify NN hyperparameters
-activation = 'tanh' #Activation function
-initial_weights =None #'he_uniform' #Initial guess of the model parameters
-reg = None #l1(0.0001) #regularizer
-opt = Adam(learning_rate=0.001, beta_1=0.9) #Optimizer 
-epochs = 32000 #Number of epochs
+opt = Adam(learning_rate=learning_rate_user, beta_1=beta_1_user) #Optimizer 
 batch_size = x_train.shape[0] #Batch size
 #layers in the NN, first and last are input and output layers, respectively
 #Inbetween are the hidden layers
 num_inputs = x_train.shape[1] #Number of inputs
 num_outputs = y_train.shape[1] #Number of outputs
-layers = [num_inputs] + 4 * [100] + [num_outputs] #NN architecture
+# layers = [num_inputs] + 4 * [100] + [num_outputs] #NN architecture
 
 # %% NN model
+
+# Making backup of the current weights
+dir_name_weight = "weights"
+file_name_weight = "weights.h5"
+fullpath_weights = os.path.join(dir_name_weight, file_name_weight)
+if clear_current_weights==1:
+    now = datetime.now()
+    time_str = now.strftime("%Y%m%d%H%M%S")
+    target = os.path.join(dir_name_weight, "backup_"+time_str+"_"+file_name_weight)
+    if(os.path.isfile(fullpath_weights)):
+        shutil.move(fullpath_weights, target)
 
 # Build the NN structure 
 model = Sequential()
@@ -129,14 +171,16 @@ for i in range(len(layers)-3):
 model.add(Dense(layers[-1], activity_regularizer=reg))
 #plot_model(model, to_file="model_plot.png", show_shapes=True)
 
+
+# loss=mse is mean squared error
 model.compile(optimizer=opt, loss='mse') #Complile the model
 
 #save best model
-checkpoint = ModelCheckpoint('weights/weights.h5',monitor='loss',      #model checkpointing
+checkpoint = ModelCheckpoint(fullpath_weights,monitor='loss',      #model checkpointing
                             verbose=0, save_best_only=True, mode='min',
-                            save_freq='epoch', period=1)
+                            save_freq='epoch')
 csv_logger = CSVLogger('training.log')    #Saves the training loss values
-earlystopping = EarlyStopping(monitor='loss', min_delta=0, patience=10000,  #earlystopping
+earlystopping = EarlyStopping(monitor='loss', min_delta=0, patience=2000,  #earlystopping
                               verbose=0, mode='auto', baseline=None,
                               restore_best_weights=False)  
 
@@ -149,9 +193,14 @@ r = model.fit(x_train,y_train, epochs=epochs,
 y_pred = model.predict(x_test) #uses NN weights saved at last epoch
 
 # load weights
-model.load_weights("weights/weights.h5") #NN weights saved from epoch with lowest loss value
-model.compile(optimizer=opt, loss='mse')
+model.load_weights(fullpath_weights) #NN weights saved from epoch with lowest loss value
+
+model.compile(optimizer=opt, loss='mse', metrics='accuracy')
 y_pred_best = model.predict(x_test) #prediction when loss value is lowest during training
+
+# Evaluate the model
+loss, acc = model.evaluate(x_train, y_train, verbose=0)
+print("Trained model, accuracy: {:5.2f}%".format(100 * acc))
 
 #for layer in model.layers :
 #    print(layer.name+" : input ("+str(layer.input_shape)+") output ("+str(layer.output_shape)+")")
@@ -162,7 +211,7 @@ y_pred_best = model.predict(x_test) #prediction when loss value is lowest during
 # ax2.plot(x_test[:,0],y_test[:,2],'o',label='True')
 # ax2.plot(x_test[:,0],y_pred_best[:,2],'*',label='Predicted')
 # ax2.legend()
-# fig.savefig('//ustlh01as18/work/Krista/ML_Codes_MiniTT/Plots/Comparison_plot.png')
+# fig.savefig('Comparison_plot.png')
 
 ###################################################    Scale data back to original    ###########################################################
 

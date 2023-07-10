@@ -146,7 +146,7 @@ if data_out_cols[i_impl_width_out] == 'Outlet width': data_out_cols[i_impl_width
 if data_out_cols[i_diff_radius_out] == 'Avg. radius': data_out_cols[i_diff_radius_out] = "Diffuser radius"
 if data_out_cols[i_diff_width_out] == 'Width': data_out_cols[i_diff_width_out] = "Diffuser width"
 
-data_out.columns=data_out_cols
+data_out.columns = data_out_cols
 data_out_cols = data_out.columns.tolist()
 pressure_ratio_txt = data_out_cols[i_pressure_ratio_out]
 efficiency_txt = data_out_cols[i_efficiency_out]
@@ -308,6 +308,10 @@ else:
     # writing the file
     data_train.to_pickle(train_full_dir+file_format)
     data_test.to_pickle(test_full_dir+file_format)
+    
+# data_train.columns.to_series().to_csv("list_of_final_columns.csv")
+list_of_final_columns = data_train.columns.to_list()
+np.savetxt('list_of_final_columns.txt', list_of_final_columns, delimiter="\n", fmt="%s")
 
 # %% Section 6: Optional - Trying something with Compressor class
 # Not necessary - optional
