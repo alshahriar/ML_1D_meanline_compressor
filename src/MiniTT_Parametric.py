@@ -27,6 +27,7 @@ __status__ = "Pre-production"
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import pickle
 
 # System or built-in
 import os
@@ -84,7 +85,7 @@ initial_weights = None #'he_uniform' #Initial guess of the model parameters
 reg = None #l1(0.0001) #regularizer
 learning_rate_user = 0.001;
 beta_1_user = 0.9
-epochs = 5 #Number of epochs
+epochs = 25000 #Number of epochs
 
 if len(layers)!=n_layers+2:
     import sys
@@ -195,14 +196,19 @@ model.add(Dense(layers[-1], activity_regularizer=reg))
 
 
 # loss=mse is mean squared error
-model.compile(optimizer=opt, loss='mse') #Complile the model
+model.compile(optimizer=opt, loss='mse', metrics='accuracy') #Complile the model
 
-#save best model
-checkpoint = ModelCheckpoint(fullpath_weights,monitor='loss',      #model checkpointing
+# model checkpointing: save best model
+checkpoint = ModelCheckpoint(fullpath_weights,monitor='loss',
                             verbose=0, save_best_only=True, mode='min',
                             save_freq='epoch')
-csv_logger = CSVLogger('training.log')    #Saves the training loss values
-earlystopping = EarlyStopping(monitor='loss', min_delta=0, patience=2000,  #earlystopping
+
+# Saves the training loss values
+csv_logger = CSVLogger('training.log')    
+
+# Earlystopping is needed to prevent the model from overfitting if the
+# number of epochs is very high
+earlystopping = EarlyStopping(monitor='loss', min_delta=0, patience=1000,
                               verbose=0, mode='auto', baseline=None,
                               restore_best_weights=False)  
 
@@ -211,7 +217,7 @@ r = model.fit(x_train,y_train, epochs=epochs,
               batch_size=batch_size,
               callbacks=[checkpoint,csv_logger,earlystopping]) 
 
-# %%Prediction
+# %% Prediction
 y_pred = model.predict(x_test) #uses NN weights saved at last epoch
 
 # load weights
@@ -235,43 +241,42 @@ print("Trained model, accuracy: {:5.2f}%".format(100 * acc))
 # ax2.legend()
 # fig.savefig('Comparison_plot.png')
 
-###################################################    Scale data back to original    ###########################################################
+# %% Scale data back to original
 
-#Scale to original values 
+# Scale to original values 
 x_train = x_trans.inverse_transform(x_train)
 y_train = y_trans.inverse_transform(y_train)
 x_test = x_trans.inverse_transform(x_test)
 y_test = y_trans.inverse_transform(y_test)
-y_pred    = y_trans.inverse_transform(y_pred)
+y_pred = y_trans.inverse_transform(y_pred)
 y_pred_best = y_trans.inverse_transform(y_pred_best)
 
-###########################################################    Error metrics    ##################################################################
+# %% Evaluating errors
 
-#Calculate the testing errors
+# Calculate the testing errors
 # Relative L2 norm error
 l2_error = np.linalg.norm(y_test - y_pred, 2)/np.linalg.norm(y_test, 2)
 print('Relative L2 error_u: %e' % (l2_error))
-#best weight 
+# best weight 
 l2_error_best = np.linalg.norm(y_test - y_pred_best, 2)/np.linalg.norm(y_test, 2)
 print('Relative L2 error_u (best): %e' % (l2_error_best))
 
-#Root Mean Square Error (RMSE )
+# Root Mean Square Error (RMSE )
 num_testing = test_data.shape[0]
 rmse = np.linalg.norm(y_test - y_pred, 2)/np.sqrt(num_testing)
 print('RMSE: %e' % (rmse))
-#best weight
+# best weight
 rmse_best = np.linalg.norm(y_test - y_pred_best, 2)/np.sqrt(num_testing)
 print('RMSE (best): %e' % (rmse_best))
 
-# We can also hand calucuate error by using this formula in excel: [abs(y_test-y_pred)/y_test] * 100
-###################################################    Plots    #####################################################################################
+# %% Plotting
 
-#Plot the loss function values
+# Plot the loss function values
 fig, ax1 = plt.subplots()
 ax1.plot(r.history['loss'], label='loss')
 ax1.legend()
 
-#Plot the true vs predicted Efficiency
+# Plot the true vs predicted Efficiency
 fig, ax2 = plt.subplots(figsize=(15,15))
 #ax2.plot(x_train[:,1],y_train[:,0],'o',label='Training points')
 ax2.plot(x_test[:,0],y_test[:,2],'o',label='True')
@@ -279,14 +284,17 @@ ax2.plot(x_test[:,0],y_pred_best[:,2],'*',label='Predicted')
 ax2.legend()
 fig.savefig(r'ml_images/plot1.png')
 
-#Summay of the NN structure
+# Summay of the NN structure
 print(model.summary())
-#Loss function value
-print(min(r.history['loss']))
-#The End
-# %%
-np.savez('saved_variables',y_pred=y_pred,y_pred_best=y_pred_best)
-loaded_variables = np.load('saved_variables.npz')
-print(loaded_variables.files)
-# %%
+# Loss function value
+print("minimum loss: " + str(min(r.history['loss'])))
 
+# %% Saving important variables
+now = datetime.now()
+time_str = now.strftime("%Y%m%d%H%M%S")
+file = open("saved_variables_"+time_str+".pickle", 'wb')
+pickle.dump(y_pred,file)
+pickle.dump(y_pred_best,file)
+pickle.dump(x_test,file)
+pickle.dump(y_test,file)
+file.close()
