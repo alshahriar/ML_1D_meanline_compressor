@@ -66,8 +66,13 @@ from tensorflow.keras.regularizers import l1, l2
 from tensorflow.keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 from tensorflow.keras.utils import plot_model
 
+# %% Custom functions
+class LossAndErrorPrintingCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        if epoch%100==0:
+            print("epoch = ", epoch,", Loss = ", "%.4f"%logs["loss"],", Acc = ","%.4f"%logs["accuracy"])
 
-# %% inputs necessary from the user
+# %% User inputs
 
 # Locations
 read_method = 1
@@ -78,8 +83,8 @@ if read_method==0:
 else:
     train_data_dir = r"../training_data"
     test_data_dir = r"../testing_data"    
-    train_data_fname = r"training_parameters_92.pkl"
-    test_data_fname = r"testing_parameters_92.pkl"
+    train_data_fname = r"training_parameters_95.pkl"
+    test_data_fname = r"testing_parameters_95.pkl"
     train_full_dir = os.path.join(train_data_dir, train_data_fname)
     test_full_dir = os.path.join(test_data_dir, test_data_fname)
     read_method  = 1
@@ -108,8 +113,9 @@ if len(layers)!=n_layers+2:
 # If want to run a model for smaller size
 trim_flag = 0
 if trim_flag==1:
-    nExample = 25000
-    warnings.warn("Data will trimmed for first "+str(nExample)+" examples")
+    nExample = 5000
+    wrn_txt = "\n \n Data will trimmed for first "+str(nExample)+" examples \n \n"
+    warnings.warn(wrn_txt)
 
 # Save model once the job is done
 save_flag = 1
@@ -147,7 +153,7 @@ if len(train_data_df.columns)!= (in_col+out_col):
     sys.exit("Imported data dimension mismatch")
     print("expecting cols: ",in_col+out_col, ", but: loaded cols: ",len(train_data_df.columns))
     
-# For faster analysis doing for 5000 examples only
+# For faster analysis doing for nExample examples only
 if trim_flag==1:
     old_train_data = train_data
     old_test_data = test_data
@@ -162,7 +168,8 @@ y_train = train_data[:,in_col:] #output values
 x_test = test_data[:,:in_col] #input values
 y_test = test_data[:,in_col:] #output values
 
-# Normalize the data
+# Get the parameters for normalization
+# based on training data
 x_trans = StandardScaler()
 x_trans.fit(x_train)
 y_trans = StandardScaler()
@@ -171,8 +178,9 @@ y_trans.fit(y_train)
 # Normalize inputs/outputs to zero mean and unit variance
 x_train = x_trans.transform(x_train)
 y_train = y_trans.transform(y_train)
-y_test = y_trans.transform(y_test)
 x_test = x_trans.transform(x_test)
+y_test = y_trans.transform(y_test)
+
 
 # %% Hyperparameters
 
@@ -188,7 +196,7 @@ num_outputs = y_train.shape[1] #Number of outputs
 
 # Making backup of the current weights
 dir_name_weight = "weights"
-file_name_weight = "weights.h5"
+file_name_weight = "temp_weights.h5"
 fullpath_weights = os.path.join(dir_name_weight, file_name_weight)
 if clear_current_weights==1:
     target = os.path.join(dir_name_weight, "backup_"+case_ID+"_"+file_name_weight)
@@ -223,24 +231,29 @@ earlystopping = EarlyStopping(monitor='loss', min_delta=0, patience=1000,
                               verbose=0, mode='auto', baseline=None,
                               restore_best_weights=False)  
 
+# Create a callback that saves the model's weights every 10 epochs
+# vb_callback = tf.keras.callbacks.Callback(verbose = 0 if epochs % 10 else 0)
+
 #Train the model
 r = model.fit(x_train,y_train, epochs=epochs,  
-              batch_size=batch_size,
-              callbacks=[checkpoint,csv_logger,earlystopping]) 
+              batch_size=batch_size,verbose=0,
+              callbacks=[checkpoint,csv_logger,earlystopping,LossAndErrorPrintingCallback()]) 
 
 # %% Saving results
 # Saving the entire model
 if save_flag==1:
     model_name = "model_"+case_ID+".h5"
-    model.save(r"complete_model/"+model_name)
+    model_dir = r"complete_model"
+    saved_model_dir = os.path.join(model_dir, model_name)
+    model.save(saved_model_dir)
 
 # Saving weigths
 dir_name_weight = "weights"
 file_name_weight = "weights.h5"
 fullpath_weights = os.path.join(dir_name_weight, file_name_weight)
-target = os.path.join(dir_name_weight, "saved_"+case_ID+"_"+file_name_weight)
+saved_weights_dir = os.path.join(dir_name_weight, "saved_"+case_ID+"_"+file_name_weight)
 if(os.path.isfile(fullpath_weights)):
-    shutil.copyfile(fullpath_weights, target)
+    shutil.copyfile(fullpath_weights, saved_weights_dir)
 # %% Prediction
 y_pred = model.predict(x_test) #uses NN weights saved at last epoch
 
@@ -251,7 +264,7 @@ model.compile(optimizer=opt, loss='mse', metrics='accuracy')
 y_pred_best = model.predict(x_test) #prediction when loss value is lowest during training
 
 # Evaluate the model
-loss, acc = model.evaluate(x_train, y_train, verbose=0)
+loss, acc = model.evaluate(x_test, y_test, verbose=0)
 print("Trained model, accuracy: {:5.2f}%".format(100 * acc))
 
 #for layer in model.layers :
@@ -315,9 +328,8 @@ print("minimum loss: " + str(min(r.history['loss'])))
 
 # %% Saving important variables
 file = open("saved_variables_"+case_ID+".pickle", 'wb')
-pickle.dump(y_pred,file)
-pickle.dump(y_pred_best,file)
-pickle.dump(x_test,file)
-pickle.dump(y_test,file)
-pickle.dump(layers,file)
+pickle.dump([train_data_dir,test_data_dir,train_data_fname,test_data_fname],file)
+pickle.dump([x_trans,y_trans],file)
+pickle.dump([case_ID],file)
+pickle.dump([saved_weights_dir,saved_model_dir],file)
 file.close()
