@@ -88,46 +88,56 @@ model_ID = ["2023_07_11_08_4940","2023_07_11_13_0411","2023_07_11_10_5056"]
 train_data_fname_list = [r"training_parameters.pkl",r"training_parameters_92.pkl",r"training_parameters_92.pkl"]
 read_method  = 1
 
+test_data_dir = r"../testing_data"    
+test_data_fname = r"testing_parameters_92.pkl" 
+test_full_dir = os.path.join(test_data_dir, test_data_fname)
+test_data_df = pd.read_pickle(test_full_dir)
+test_data = test_data_df.to_numpy()    
+
+x_test = test_data[:,:in_col] #input values
+y_test = test_data[:,in_col:] #output values
+
+
 # %% Load model and calclate accuracy
 
 for i in range(len(model_ID)):
-    train_data_dir = r"../training_data"
-    test_data_dir = r"../testing_data"    
-    # need to load training data for scaling parameters
-    train_data_fname = train_data_fname_list[i] 
-    # fixed testing data for all model
-    test_data_fname = r"testing_parameters_92.pkl" 
-    train_full_dir = os.path.join(train_data_dir, train_data_fname)
-    test_full_dir = os.path.join(test_data_dir, test_data_fname)
-    train_data_df = pd.read_pickle(train_full_dir)
-    test_data_df = pd.read_pickle(test_full_dir)
-    train_data = train_data_df.to_numpy()
-    test_data = test_data_df.to_numpy()    
-    
-    # Training data
-    x_train = train_data[:,:in_col] #input values
-    y_train = train_data[:,in_col:] #output values
-    x_test = test_data[:,:in_col] #input values
-    y_test = test_data[:,in_col:] #output values
-    
-    x_trans = StandardScaler()
-    x_trans.fit(x_train)
-    y_trans = StandardScaler()
-    y_trans.fit(y_train)
-    x_test_transformed = x_trans.transform(x_test)
-    y_test_transformed = y_trans.transform(y_test)    
-    
     case_ID = model_ID[i]
-    print(case_ID)
-    # Recreate the exact same model, including its weights and the optimizer
-    model_name = "model_"+case_ID+".h5"
-    model = tf.keras.models.load_model(r"complete_model/"+model_name)
+    #print(case_ID)
+
+    file = open("saved_variables_"+case_ID+".pickle", 'rb')
+    [train_data_dir,test_data_dir,train_data_fname,test_data_fname] = pickle.load(file)
+    [x_trans,y_trans] = pickle.load(file)
+    [case_ID] = pickle.load(file)
+    [saved_weights_dir,saved_model_dir] = pickle.load(file)
+    file.close()
     
-    # Show the model architecture
-    # model.summary()
-    # y_pred = model.predict(x_test_transformed) #uses NN weights saved at last epoch
+    print(train_data_fname)
     
+    x_test_transformed = x_trans.transform(x_test)
+    y_test_transformed = y_trans.transform(y_test)
+
+    model = tf.keras.models.load_model(saved_model_dir)
     loss, acc = model.evaluate(x_test_transformed, y_test_transformed, verbose=0)
-    print("Trained model, accuracy: {:5.2f}%".format(100 * acc))
+    print("Trained model, accuracy: {:5.4f}%".format(100 * acc))
     
+    y_pred_transformed = model.predict(x_test_transformed,verbose=0) #uses NN weights saved at last epoch
+    
+    model.load_weights(saved_weights_dir) #NN weights saved from epoch with lowest loss value
+    # model.compile(optimizer=opt, loss='mse', metrics='accuracy')
+    y_pred_best_transformed = model.predict(x_test_transformed,verbose=0) #prediction when loss value is lowest during training
+
+    y_pred = y_trans.inverse_transform(y_pred_transformed)
+    y_pred_best = y_trans.inverse_transform(y_pred_best_transformed)
+    
+    #mse = tf.keras.losses.MeanSquaredError()
+    mape = tf.keras.losses.MeanAbsolutePercentageError()
+    #mre = tf.keras.metrics.MeanRelativeError(y_trans)
+    #print('MSE accuracy: %f' % (1-mse(y_test, y_pred).numpy()))
+    print('MAPE accuracy: {:.4f}%'.format(100- mape(y_test, y_pred).numpy()))
+    #print('MRE accuracy: %f' % (1- mre(y_test, y_pred).numpy()))
+    
+    l2_error = np.linalg.norm(y_test - y_pred, 2)/np.linalg.norm(y_test, 2)
+    print('Relative L2 accuracy: {:.4f}%'.format(100*(1-l2_error)))
+    l2_error_best = np.linalg.norm(y_test - y_pred_best, 2)/np.linalg.norm(y_test, 2)
+    print('Relative L2 accuracy (best): {:.4f}%'.format(100*(1-l2_error_best)))
     

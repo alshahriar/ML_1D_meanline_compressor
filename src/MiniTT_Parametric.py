@@ -83,8 +83,8 @@ if read_method==0:
 else:
     train_data_dir = r"../training_data"
     test_data_dir = r"../testing_data"    
-    train_data_fname = r"training_parameters_95.pkl"
-    test_data_fname = r"testing_parameters_95.pkl"
+    train_data_fname = r"training_parameters.pkl"
+    test_data_fname = r"testing_parameters.pkl"
     train_full_dir = os.path.join(train_data_dir, train_data_fname)
     test_full_dir = os.path.join(test_data_dir, test_data_fname)
     read_method  = 1
