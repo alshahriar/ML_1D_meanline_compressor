@@ -71,32 +71,6 @@ from tensorflow.keras.utils import plot_model
 
 # Locations
 read_method = 1
-clear_current_weights = 1 # will create a backup
-# Inputs
-in_col = 18 #Number of input columns
-out_col = 3 #Number of output columns
-
-# Number of hidden layers
-n_layers = 4;
-layers = [in_col,100,100,100,100,out_col];
-#Specify NN hyperparameters
-activation = 'tanh' #Activation function
-initial_weights = None #'he_uniform' #Initial guess of the model parameters
-reg = None #l1(0.0001) #regularizer
-learning_rate_user = 0.001;
-beta_1_user = 0.9
-epochs = 25000 #Number of epochs
-
-if len(layers)!=n_layers+2:
-    import sys
-    sys.exit("Mismatch of n_layers and neuron list")
-
-# If want to run a model for smaller size
-trim_flag = 1
-if trim_flag==1:
-    nExample = 25000
-    warnings.warn("Data will trimmed for first "+str(nExample)+" examples")
-
 if read_method==0:
     train_data_dir = r"../training_data/training_batch_173.csv"
     test_data_dir = r"../testing_data/testing_batch_173.csv"
@@ -104,11 +78,44 @@ if read_method==0:
 else:
     train_data_dir = r"../training_data"
     test_data_dir = r"../testing_data"    
-    train_data_fname = r"training_parameters.pkl"
-    test_data_fname = r"testing_parameters.pkl"
+    train_data_fname = r"training_parameters_92.pkl"
+    test_data_fname = r"testing_parameters_92.pkl"
     train_full_dir = os.path.join(train_data_dir, train_data_fname)
     test_full_dir = os.path.join(test_data_dir, test_data_fname)
     read_method  = 1
+
+clear_current_weights = 1 # will create a backup of the existing weights
+# Inputs
+in_col = 18 #Number of input columns
+out_col = 3 #Number of output columns
+
+# Number of hidden layers
+n_layers = 4;
+layers = [in_col,100,100,100,100,out_col];
+# Specify NN hyperparameters
+activation = 'tanh' #Activation function
+initial_weights = None #'he_uniform' #Initial guess of the model parameters
+reg = None #l1(0.0001) #regularizer
+learning_rate_user = 0.001;
+beta_1_user = 0.9
+epochs = 25000 #Number of epochs
+# batch_size = full batch - added later in the code
+
+if len(layers)!=n_layers+2:
+    import sys
+    sys.exit("Mismatch of n_layers and neuron list")
+
+# If want to run a model for smaller size
+trim_flag = 0
+if trim_flag==1:
+    nExample = 25000
+    warnings.warn("Data will trimmed for first "+str(nExample)+" examples")
+
+# Save model once the job is done
+save_flag = 1
+
+now = datetime.now()
+case_ID = now.strftime("%Y_%m_%d_%H_%M%S")
 
 # %% Import data
 if read_method==0:
@@ -121,13 +128,6 @@ else:
     test_data_df = pd.read_pickle(test_full_dir)
     train_data = train_data_df.to_numpy()
     test_data = test_data_df.to_numpy()    
-
-# For faster analysis doing for 5000 examples only
-if trim_flag==1:
-    old_train_data = train_data
-    old_test_data = test_data
-    train_data = train_data[:nExample,:]
-    test_data = test_data[:int(nExample*0.2),:]
     
 # Removing duplicates
 # define the location of the dataset
@@ -140,6 +140,19 @@ dups = test_data_df.duplicated()
 if dups.any():
     print("Duplicates found on test data")
     test_data_df = test_data_df.drop_duplicates()
+
+# Checking dimensions
+if len(train_data_df.columns)!= (in_col+out_col):
+    import sys
+    sys.exit("Imported data dimension mismatch")
+    print("expecting cols: ",in_col+out_col, ", but: loaded cols: ",len(train_data_df.columns))
+    
+# For faster analysis doing for 5000 examples only
+if trim_flag==1:
+    old_train_data = train_data
+    old_test_data = test_data
+    train_data = train_data[:nExample,:]
+    test_data = test_data[:int(nExample*0.2),:]
 
 # Training data
 x_train = train_data[:,:in_col] #input values
@@ -178,9 +191,7 @@ dir_name_weight = "weights"
 file_name_weight = "weights.h5"
 fullpath_weights = os.path.join(dir_name_weight, file_name_weight)
 if clear_current_weights==1:
-    now = datetime.now()
-    time_str = now.strftime("%Y%m%d%H%M%S")
-    target = os.path.join(dir_name_weight, "backup_"+time_str+"_"+file_name_weight)
+    target = os.path.join(dir_name_weight, "backup_"+case_ID+"_"+file_name_weight)
     if(os.path.isfile(fullpath_weights)):
         shutil.move(fullpath_weights, target)
 
@@ -204,7 +215,7 @@ checkpoint = ModelCheckpoint(fullpath_weights,monitor='loss',
                             save_freq='epoch')
 
 # Saves the training loss values
-csv_logger = CSVLogger('training.log')    
+csv_logger = CSVLogger("training_"+case_ID+".log")    
 
 # Earlystopping is needed to prevent the model from overfitting if the
 # number of epochs is very high
@@ -217,6 +228,19 @@ r = model.fit(x_train,y_train, epochs=epochs,
               batch_size=batch_size,
               callbacks=[checkpoint,csv_logger,earlystopping]) 
 
+# %% Saving results
+# Saving the entire model
+if save_flag==1:
+    model_name = "model_"+case_ID+".h5"
+    model.save(r"complete_model/"+model_name)
+
+# Saving weigths
+dir_name_weight = "weights"
+file_name_weight = "weights.h5"
+fullpath_weights = os.path.join(dir_name_weight, file_name_weight)
+target = os.path.join(dir_name_weight, "saved_"+case_ID+"_"+file_name_weight)
+if(os.path.isfile(fullpath_weights)):
+    shutil.copyfile(fullpath_weights, target)
 # %% Prediction
 y_pred = model.predict(x_test) #uses NN weights saved at last epoch
 
@@ -290,11 +314,10 @@ print(model.summary())
 print("minimum loss: " + str(min(r.history['loss'])))
 
 # %% Saving important variables
-now = datetime.now()
-time_str = now.strftime("%Y%m%d%H%M%S")
-file = open("saved_variables_"+time_str+".pickle", 'wb')
+file = open("saved_variables_"+case_ID+".pickle", 'wb')
 pickle.dump(y_pred,file)
 pickle.dump(y_pred_best,file)
 pickle.dump(x_test,file)
 pickle.dump(y_test,file)
+pickle.dump(layers,file)
 file.close()

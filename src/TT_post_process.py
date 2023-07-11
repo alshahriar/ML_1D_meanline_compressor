@@ -130,7 +130,7 @@ pressure_ratio_min = 1.0;
 pressure_ratio_max = 5.0;
 
 efficiency_min = 0.2;
-efficiency_max = 1.0;
+efficiency_max = 0.95;
 # %% Section 2: Data formatting
 
 # Removing unnecessary rows in the TT output file
