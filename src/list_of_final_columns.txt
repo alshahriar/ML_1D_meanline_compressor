@@ -1,0 +1,21 @@
+Inlet mass flow
+RPM
+Number of main blades
+TE Blade Angle Hub
+TE Blade Angle Tip
+LE Clearance
+TE Clearance
+Inclination angle
+Hub radius
+Shroud radius
+Impeller radius
+Impeller width
+Rpin
+Bpin
+Diffuser radius
+Diffuser width
+Throat area
+Exit pipe diameter
+Machine pressure ratio (T-S)
+Machine power
+Isentropic machine efficiency (T-S)
