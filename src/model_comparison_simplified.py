@@ -85,7 +85,6 @@ def inverse_normalize_data(data):
 in_col = 18
 output_dir = "model_comparison_images"
 model_ID = ["2023_07_11_08_4940","2023_07_11_13_0411","2023_07_11_10_5056"]
-train_data_fname_list = [r"training_parameters.pkl",r"training_parameters_92.pkl",r"training_parameters_92.pkl"]
 read_method  = 1
 
 test_data_dir = r"../testing_data"    
@@ -99,6 +98,12 @@ y_test = test_data[:,in_col:] #output values
 
 
 # %% Load model and calclate accuracy
+
+nEpochMax = 25000
+
+epoch = np.zeros([25000,len(model_ID)])
+accuracy = np.zeros([25000,len(model_ID)])
+losses = np.zeros([25000,len(model_ID)])
 
 for i in range(len(model_ID)):
     case_ID = model_ID[i]
@@ -141,3 +146,24 @@ for i in range(len(model_ID)):
     l2_error_best = np.linalg.norm(y_test - y_pred_best, 2)/np.linalg.norm(y_test, 2)
     print('Relative L2 accuracy (best): {:.4f}%'.format(100*(1-l2_error_best)))
     
+    log_file_name = "training_"+case_ID+".log"
+    df = pd.read_csv(log_file_name)
+    
+    epoch[:,i] = df.epoch.values
+    accuracy[:,i] = df.accuracy.values
+    losses[:,i] = df.loss.values
+    
+    #plt.figure(1)
+    #df.plot.line(x = "epoch",y="accuracy")
+    #plt.hold(True)
+    #plt.figure(2)
+    #df.plot.line(x = "epoch",y="loss")
+    #plt.hold(True)
+# %%
+for i in range(len(model_ID)):
+    plt.plot(epoch[:,i],accuracy[:,i])
+plt.ylim([0.9, 1])
+# %%
+for i in range(len(model_ID)):
+    plt.plot(epoch[:,i],losses[:,i])
+plt.ylim([0, 0.1])

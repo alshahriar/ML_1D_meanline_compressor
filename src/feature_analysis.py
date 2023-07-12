@@ -60,6 +60,14 @@ list_of_final_columns = [lines.replace(' ','_') for lines in list_of_final_colum
 list_of_final_columns = [re.sub('[!,*)@#%(&$?.^-]', '', lines) for lines in list_of_final_columns] # removing special char except underscore
 train_data_df.columns = list_of_final_columns;
 test_data_df.columns = list_of_final_columns;
+
+titles = ["Inlet Mass Flow [kg/s]", "RPM", "Number of Main Blades", "TE Hub Blade angle [deg(m)]", 
+          "TE Tip Blade angle [deg(m)]", "LE Clearance [m]", "TE Clearance [m]", "Inclination angle [deg(delta)]", 
+          "Imp. Hub Radius [m]", "Imp. Shroud Radius [m]", "Imp. Outlet Radius [m]", "Imp. Outlet Width [m]",
+          "Pinch radius (Rpin) [m]", "Pinch width (Bpin) [m]", "Diff. Outlet Radius [m]", "Diff. Outlet Width [m]",
+          "Volute Throat Area [m^2]", "Volute Exit Diameter [m]", "Pressure Ratio", "Power (W)", "Efficiency", "eta_group", "pr_group"]
+
+
 # %% Plotting histograms
 n_groups = 3;
 max_eta = train_data_df.Isentropic_machine_efficiency_TS.max()
@@ -90,61 +98,64 @@ train_data_df["eta_group"] = eta_group
 # fig = train_data_df.pivot(columns='eta_group').Inlet_mass_flow.plot(kind = 'hist', stacked=True, bins=10, edgecolor="black")
 new_df = pd.DataFrame()
 
-for (columnName, columnData) in train_data_df.iteritems():
+#for (columnName, columnData) in train_data_df.iteritems():
+for i, columnName in enumerate(train_data_df):
+    columnData = train_data_df[columnName]
     print('Column Name : ', columnName)
     new_df["eta_group"] = eta_group
     new_df["data"] = columnData
     fig = new_df.pivot(columns='eta_group').data.plot(kind = 'hist', stacked=True, bins=10, edgecolor="black")
     # print('Column Contents : ', columnData.values)
     # plt.hist(columnData.values,edgecolor="black",bins=10)
-    xlbl_txt = columnName.replace("_"," ")
+    xlbl_txt = titles[i]
     plt.xlabel(xlbl_txt)
     plt.ylabel('count')
     plt.legend([r"$\eta$ = "+range1_txt,r"$\eta$ = "+range2_txt,r"$\eta$ = "+range3_txt])
-    plt.savefig(os.path.join(r"hist_figures", columnName+r".png"))
+    plt.savefig(os.path.join(r"hist_figures", "eta", columnName+r".png"))
     plt.close()
     
 # %%
 
 n_groups = 3;
-max_eta = train_data_df.Isentropic_machine_efficiency_TS.max()
-min_eta = train_data_df.Isentropic_machine_efficiency_TS.min()
-delta_eta = np.linspace(min_eta, max_eta, n_groups+1)
-eta_values = np.array(train_data_df.Isentropic_machine_efficiency_TS.values)
+max_pr = train_data_df.Machine_pressure_ratio_TS.max()
+min_pr = train_data_df.Machine_pressure_ratio_TS.min()
+delta_pr = np.linspace(min_pr, max_pr, n_groups+1)
+pr_values = np.array(train_data_df.Machine_pressure_ratio_TS.values)
 
-range1_txt = str(round(delta_eta[0],2))+"-"+str(round(delta_eta[1],2))
-range2_txt = str(round(delta_eta[1],2))+"-"+str(round(delta_eta[2],2))
-range3_txt = str(round(delta_eta[2],2))+"-"+str(round(delta_eta[3],2))
+range1_txt = str(round(delta_pr[0],2))+"-"+str(round(delta_pr[1],2))
+range2_txt = str(round(delta_pr[1],2))+"-"+str(round(delta_pr[2],2))
+range3_txt = str(round(delta_pr[2],2))+"-"+str(round(delta_pr[3],2))
 
-bool_val = (eta_values < delta_eta[1])
-eta_group = np.multiply(bool_val, 1)
+bool_val = (pr_values < delta_pr[1])
+pr_group = np.multiply(bool_val, 1)
 
-cond1 = ((eta_values >= delta_eta[1]))
-cond2 = (eta_values < delta_eta[2])
+cond1 = ((pr_values >= delta_pr[1]))
+cond2 = (pr_values < delta_pr[2])
 bool_val = np.all([cond1,cond2],  axis=0)
-eta_group = eta_group + np.multiply(bool_val, 2)
+pr_group = pr_group + np.multiply(bool_val, 2)
 
-cond1 = ((eta_values >= delta_eta[2]))
-cond2 = (eta_values <= delta_eta[3])
+cond1 = ((pr_values >= delta_pr[2]))
+cond2 = (pr_values <= delta_pr[3])
 bool_val = np.all([cond1,cond2],  axis=0)
-eta_group = eta_group + np.multiply(bool_val, 3)
+pr_group = pr_group + np.multiply(bool_val, 3)
 
-zero_values = np.argwhere(eta_group == 0)
+zero_values = np.argwhere(pr_group == 0)
 
-train_data_df["eta_group"] = eta_group
-# fig = train_data_df.pivot(columns='eta_group').Inlet_mass_flow.plot(kind = 'hist', stacked=True, bins=10, edgecolor="black")
+train_data_df["pr_group"] = pr_group
+# fig = train_data_df.pivot(columns='pr_group').Inlet_mass_flow.plot(kind = 'hist', stacked=True, bins=10, edgecolor="black")
 new_df = pd.DataFrame()
 
-for (columnName, columnData) in train_data_df.iteritems():
+for i, columnName in enumerate(train_data_df):
+    columnData = train_data_df[columnName]
     print('Column Name : ', columnName)
-    new_df["eta_group"] = eta_group
+    new_df["pr_group"] = pr_group
     new_df["data"] = columnData
-    fig = new_df.pivot(columns='eta_group').data.plot(kind = 'hist', stacked=True, bins=10, edgecolor="black")
+    fig = new_df.pivot(columns='pr_group').data.plot(kind = 'hist', stacked=True, bins=10, edgecolor="black")
     # print('Column Contents : ', columnData.values)
     # plt.hist(columnData.values,edgecolor="black",bins=10)
-    xlbl_txt = columnName.replace("_"," ")
+    xlbl_txt = titles[i]
     plt.xlabel(xlbl_txt)
     plt.ylabel('count')
-    plt.legend([r"$\eta$ = "+range1_txt,r"$\eta$ = "+range2_txt,r"$\eta$ = "+range3_txt])
-    plt.savefig(os.path.join(r"hist_figures", columnName+r".png"))
-    plt.close()    
+    plt.legend([r"PR = "+range1_txt,r"PR = "+range2_txt,r"PR = "+range3_txt])
+    plt.savefig(os.path.join(r"hist_figures", "pr", columnName+r".png"))
+    plt.close()

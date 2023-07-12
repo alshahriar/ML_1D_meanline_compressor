@@ -63,7 +63,6 @@ def clean_data(df,efficiency_min,efficiency_max, \
     data_bad = data_bad.drop(["Bad Samples"],axis=1)
     return data_good, data_bad
 
-
 # %% Section 1: Reading old data
 batch_number = 173
 train_data_dir = r"../training_data"
@@ -87,7 +86,7 @@ efficiency_txt = r"Isentropic machine efficiency (T-S)"
 pressure_ratio_min = 1.0;
 pressure_ratio_max = 5.0;
 efficiency_min = 0.2;
-efficiency_max = 0.95;
+efficiency_max = 1.00;
 data_old_train, data_out_bad_samples_train = clean_data(data_old_train,efficiency_min,efficiency_max, \
                pressure_ratio_min, pressure_ratio_max, \
                    efficiency_txt, pressure_ratio_txt)
@@ -100,8 +99,8 @@ file_format  = ".pkl"
 # writing the file
 train_data_dir = r"../training_data"
 test_data_dir = r"../testing_data"    
-train_data_fname = "training_parameters_95.pkl"
-test_data_fname = "testing_parameters_95.pkl"
+train_data_fname = "training_parameters.pkl"
+test_data_fname = "testing_parameters.pkl"
 train_full_dir = os.path.join(train_data_dir, train_data_fname)
 test_full_dir = os.path.join(test_data_dir, test_data_fname)
 data_old_train.to_pickle(train_full_dir)

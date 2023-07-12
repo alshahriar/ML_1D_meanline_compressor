@@ -103,7 +103,7 @@ savemat("Matlab_Scripts/results.mat", pred, appendmat=True, format='5',
 # Transport into Excel Spreadsheet
 titles = ["Inlet Mass Flow [kg/s]", "RPM", "Number of Main Blades", "TE Hub Blade angle [deg(m)]", "TE Tip Blade angle [deg(m)]", "LE Clearance [m]",
           "TE Clearance [m]", "Inclination angle [deg(delta)]", "Imp. Hub Radius [m]", "Imp. Shroud Radius [m]",
-          "Imp. Outlet Radius [m]", "Imp. Outlet Width [m]", "Rpin [m]", "Bpin [m]", "Diff. Outlet Radius [m]", "Diff. Outlet Width [m]",
+          "Imp. Outlet Radius [m]", "Imp. Outlet Width [m]", "Pinch radius (Rpin) [m]", "Pinch width (Bpin) [m]", "Diff. Outlet Radius [m]", "Diff. Outlet Width [m]",
           "Volute Throat Area [m^2]", "Volute Exit Diameter [m]", "PR-Predicted", "Power-Predicted", "Efficiency-Predicted"]
 df = pd.DataFrame(results, columns=titles)
 df.to_excel(excel_writer="Excel_Spreadsheets/results.xlsx")
