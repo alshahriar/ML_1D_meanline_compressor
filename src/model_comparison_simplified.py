@@ -84,11 +84,11 @@ def inverse_normalize_data(data):
 # %%
 in_col = 18
 output_dir = "model_comparison_images"
-model_ID = ["2023_07_11_08_4940","2023_07_11_13_0411","2023_07_11_10_5056"]
+model_ID = ["2023_07_13_17_5832","2023_07_13_19_0159","2023_07_13_20_0415"]
 read_method  = 1
 
 test_data_dir = r"../testing_data"    
-test_data_fname = r"testing_parameters_92.pkl" 
+test_data_fname = r"testing_parameters_95.pkl" 
 test_full_dir = os.path.join(test_data_dir, test_data_fname)
 test_data_df = pd.read_pickle(test_full_dir)
 test_data = test_data_df.to_numpy()    

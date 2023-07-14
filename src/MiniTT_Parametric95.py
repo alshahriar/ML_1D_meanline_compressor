@@ -70,7 +70,7 @@ from tensorflow.keras.utils import plot_model
 # %% Custom functions
 class LossAndErrorPrintingCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
-        if epoch%1000==0:
+        if epoch%100==0:
             print("epoch = ", epoch,", Loss = ", "%.4f"%logs["loss"],", Acc = ","%.4f"%logs["accuracy"])
 
 # %% User inputs
@@ -84,8 +84,8 @@ if read_method==0:
 else:
     train_data_dir = r"../training_data"
     test_data_dir = r"../testing_data"    
-    train_data_fname = r"training_parameters.pkl"
-    test_data_fname = r"testing_parameters.pkl"
+    train_data_fname = r"training_parameters_95.pkl"
+    test_data_fname = r"testing_parameters_95.pkl"
     train_full_dir = os.path.join(train_data_dir, train_data_fname)
     test_full_dir = os.path.join(test_data_dir, test_data_fname)
     read_method  = 1
@@ -123,7 +123,7 @@ save_flag = 1
 
 now = datetime.now()
 case_ID = now.strftime("%Y_%m_%d_%H_%M%S")
-print("Running training for case: ",case_ID)
+
 # %% Import data
 if read_method==0:
     train_data = np.loadtxt(train_data_dir, delimiter=",")

@@ -84,8 +84,8 @@ if read_method==0:
 else:
     train_data_dir = r"../training_data"
     test_data_dir = r"../testing_data"    
-    train_data_fname = r"training_parameters.pkl"
-    test_data_fname = r"testing_parameters.pkl"
+    train_data_fname = r"training_parameters_95.pkl"
+    test_data_fname = r"testing_parameters_95.pkl"
     train_full_dir = os.path.join(train_data_dir, train_data_fname)
     test_full_dir = os.path.join(test_data_dir, test_data_fname)
     read_method  = 1
@@ -97,7 +97,7 @@ out_col = 3 #Number of output columns
 
 # Number of hidden layers
 n_layers = 4;
-layers = [in_col,100,100,100,100,out_col];
+layers = [in_col,100,50,20,10,out_col];
 # Specify NN hyperparameters
 activation = 'tanh' #Activation function
 initial_weights = None #'he_uniform' #Initial guess of the model parameters
