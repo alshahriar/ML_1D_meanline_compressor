@@ -12,7 +12,7 @@ __status__ = "Pre-production"
 """Detail description of TT_post_process.py
 
 @Usage:
-    Comparing different trained model
+    Comparing the accuracy of  different trained model
 @Date: 
     July 11 2023
 @Files
@@ -84,7 +84,10 @@ def inverse_normalize_data(data):
 # %%
 in_col = 18
 output_dir = "model_comparison_images"
-model_ID = ["2023_07_13_17_5832","2023_07_13_19_0159","2023_07_13_20_0415"]
+# Three cases
+# model_ID = ["2023_07_13_17_5832","2023_07_13_19_0159","2023_07_13_20_0415"]
+# optimized model
+model_ID = ["2023_07_14_09_2440"]
 read_method  = 1
 
 test_data_dir = r"../testing_data"    
@@ -107,7 +110,7 @@ losses = np.zeros([25000,len(model_ID)])
 
 for i in range(len(model_ID)):
     case_ID = model_ID[i]
-    #print(case_ID)
+    print(case_ID)
 
     file = open("saved_variables_"+case_ID+".pickle", 'rb')
     [train_data_dir,test_data_dir,train_data_fname,test_data_fname] = pickle.load(file)

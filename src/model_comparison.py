@@ -9,10 +9,10 @@ __maintainer__ = "Al Shahriar"
 __email__ = "al.shahriar@danfoss.com"
 __status__ = "Pre-production"
 
-"""Detail description of TT_post_process.py
+"""Detail description
 
 @Usage:
-    Comparing different trained model
+    Comparing the accuracy of different trained models using the raw data
 @Date: 
     July 11 2023
 @Files

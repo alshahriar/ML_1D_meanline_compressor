@@ -12,7 +12,7 @@ __status__ = "Pre-production"
 """Detail description
 
 @Usage:
-    Finding the optimized number of hidden layers and nuerons
+    Finding the optimized number of hidden layers and neurons
 @Date: 
     July 13 2023
 @Files
@@ -67,8 +67,10 @@ from tensorflow.keras.utils import plot_model
 # %% 
 in_col = 18
 output_dir = "model_comparison_images"
-model_ID = ["2023_07_11_08_4940","2023_07_11_13_0411","2023_07_11_10_5056"]
-
+# Three cases
+# model_ID = ["2023_07_13_17_5832","2023_07_13_19_0159","2023_07_13_20_0415"]
+# optimized model
+model_ID = ["2023_07_14_09_2440"]
 nEpochMax = 25000
 
 epoch = np.zeros([nEpochMax,len(model_ID)])
@@ -95,15 +97,23 @@ for i in range(len(model_ID)):
     
     log_file_name = "training_"+case_ID+".log"
     for j in range(len(model.layers)):
+        
+        # Weights
         Z = abs(model.layers[j].get_weights()[0])
         x = np.arange(0,Z.shape[1]+1,1)
         y = np.arange(0,Z.shape[0]+1,1)
         fig, ax = plt.subplots()
-        pc1=ax.pcolormesh(x, y, Z)
-        #plt.colormaps['Reds']
-        #plt.set_cmap('Reds')
+        pc1 = ax.pcolormesh(x, y, Z)
+        plt.colormaps['Reds']
+        plt.set_cmap('Reds')
         plt.colorbar(pc1)
         plt.savefig(os.path.join(r"pruning","model_"+(case_ID)+"_weights_"+str(j)+r".png"))
+        plt.close()
+        
+        # Biases
+        bb = abs(model.layers[j].get_weights()[1])
+        plt.plot(bb)
+        plt.savefig(os.path.join(r"pruning","model_"+(case_ID)+"_biases_"+str(j)+r".png"))
         plt.close()
         
         

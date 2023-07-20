@@ -9,10 +9,10 @@ __maintainer__ = "Al Shahriar"
 __email__ = "al.shahriar@danfoss.com"
 __status__ = "Pre-production"
 
-"""Detail description of TT_post_process.py
+"""Detail description
 
 @Usage:
-    Histogram to check if there are any biases in the features
+    Checking the original input conditions on the old dataset
 @Date: 
     July 7 2023
 @Files
