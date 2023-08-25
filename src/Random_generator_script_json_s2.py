@@ -20,7 +20,7 @@ widths = param_ranges[:, 1] - param_ranges[:, 0]
 samples = (lower + widths * np.random.random(size=(batch_size, widths.shape[0]))).round(decimals=6)
 parameters = pd.DataFrame(samples, columns=col_list_json)
 parametersT = parameters.T
-tag_txt = 'Object Parameter Unit'
+tag_txt = 'Object Parameter Unit' 
 # %%
 parameters = parameters.round({'1d/1d_Machine/stage1/impeller/blade/numMainBlade': 0})
 parameters = parameters.round({'1d/1d_Machine/stage1/return_channel/deswirl/blade/numMainBlade': 0})
