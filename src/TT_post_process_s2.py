@@ -45,11 +45,14 @@ import re
 # User-owned modules
 from compressor import Compressor
 from get_input_parameter_range import get_input_parameter_range
+from param_bounds_s2 import get_col_list
 from clean_data_single_cond import clean_data_single_cond
 # %% Section 1: Reading the data
 # Reading the inputs to TT
 # Make sure that your batch number is correct
-batch_number = 100
+batch_number = input("Enter batch number:")
+batch_number = int(batch_number)
+
 # If you want to append the current batch data to the previous batches.
 # This flag is usually True
 append_flag = bool(True);
@@ -58,7 +61,7 @@ print("Batch number is", batch_number)
 
 file_format = ".pkl"
 data_in = pd.read_pickle(r"../tt_input_s2/Batch_"+str(batch_number)+file_format)
-data_in = data_in.droplevel(1, axis=1)
+# data_in = data_in.droplevel(1, axis=1)
 data_in = data_in.set_index("Object Parameter Unit")
 # Reding the outputs of TT
 # right click on performance table - select export or save as
@@ -71,6 +74,20 @@ train_data_fname = "training_parameters_s2"
 test_data_fname = "testing_parameters_s2"
 
 batch_list_fname = "batch_list_s2.txt"
+
+# The following input cannot be extracted from TurboTides
+s1_Rpin_txt_in = r"stage1->vaneless1->Rpin"
+s1_Bpin_txt_in = r"stage1->vaneless1->Bpin"
+s1_LE_Cl_txt_in = r"stage1->impeller->blade->LE->LE Clearance"
+s1_TE_Cl_txt_in = r"stage1->impeller->blade->TE->TE Clearance"
+
+rc_crossover_ROC = 'stage1->return_channel->Crossover R.O.C. at hub'
+
+s2_Rpin_txt_in = r"stage2->vaneless1->Rpin"
+s2_Bpin_txt_in = r"stage2->vaneless1->Bpin"
+s2_LE_Cl_txt_in = r"stage2->impeller->blade->LE->LE Clearance"
+s2_TE_Cl_txt_in = r"stage2->impeller->blade->TE->TE Clearance"
+
 # %%
 # Renaming the column - one column has duplicate name.
 # Check if the column numbers are matching with column titles.
@@ -78,16 +95,18 @@ batch_list_fname = "batch_list_s2.txt"
 # TT does not properly write the column name in the prerformance table, so we
 # have to rename them.
 
-s1_Rpin_txt_in = r"stage1->vaneless1->Rpin"
-s1_Bpin_txt_in = r"stage1->vaneless1->Bpin"
-#s1_LE_Cl_txt_in = r"stage1->impeller->blade->LE->LE Clearance"
-#s1_TE_Cl_txt_in = r"stage1->impeller->blade->TE->TE Clearance"
+full_dir_batch_llist = os.path.join(train_data_dir, batch_list_fname)
 
-s2_Rpin_txt_in = r"stage2->vaneless1->Rpin"
-s2_Bpin_txt_in = r"stage2->vaneless1->Bpin"
-#s2_LE_Cl_txt_in = r"stage2->impeller->blade->LE->LE Clearance"
-#s2_TE_Cl_txt_in = r"stage2->impeller->blade->TE->TE Clearance"
-
+# Check if this batch is already added
+file1 = open(full_dir_batch_llist, 'r')
+Lines = file1.readlines()
+file1.close()
+# Strips the newline character
+for line in Lines:
+    #print(line)
+    if int(line)==batch_number:
+        sys.exit("Batch "+str(batch_number)+" is already added")
+    #print("Line{}: {}".format(count, line.strip()))
 
 nCol = len(data_out_raw.loc["Object"])
 for i in range(0,nCol):
@@ -158,13 +177,15 @@ i_stage2_volute_Exit_pipe_diameter = 45
 #cnt+=1;
 i_Rpin_s1 = cnt
 cnt+=1;i_Bpin_s1 = cnt
-#cnt+=1;i_LE_Clearance_s1 = cnt;
-#cnt+=1;i_TE_Clearance_s1 = cnt;
+cnt+=1;i_LE_Clearance_s1 = cnt;
+cnt+=1;i_TE_Clearance_s1 = cnt;
 # since the following parameters cannot be included in the performance table
 cnt+=1;i_Rpin_s2 = cnt
 cnt+=1;i_Bpin_s2 = cnt
-#cnt+=1;i_LE_Clearance_s2 = cnt;
-#cnt+=1;i_TE_Clearance_s2 = cnt;
+cnt+=1;i_LE_Clearance_s2 = cnt;
+cnt+=1;i_TE_Clearance_s2 = cnt;
+
+cnt+=1;i_rc_crossover_ROC = cnt;
 
 # Choose the upper bound and lower bound to filter out the data
 pressure_ratio_s1_min = 1.0;
@@ -216,6 +237,8 @@ temp_Bpin_s1 = [];
 temp_LE_Clearance_s1 = [];
 temp_TE_Clearance_s1 = [];
 
+temp_rc_crossover_ROC = [];
+
 temp_Rpin_s2 = [];
 temp_Bpin_s2 = [];
 temp_LE_Clearance_s2 = [];
@@ -228,25 +251,29 @@ for irow_out in range(0,nRows_out):
     case_id_txt = (row_out[18:len(row_out)])
     case_id = int(case_id_txt)-1
     #s1
-    temp_Rpin_s1.append(data_in[s1_Rpin_txt_in][case_id]*data_out[impl_radius_s1_txt][irow_out])
-    temp_Bpin_s1.append(data_in[s1_Bpin_txt_in][case_id]*data_out[impl_width_s1_txt][irow_out])
-    #temp_LE_Clearance_s1.append(data_in[s1_LE_Cl_txt_in][case_id])
-    #temp_TE_Clearance_s1.append(data_in[s1_TE_Cl_txt_in][case_id])
+    temp_Rpin_s1.append(data_in[s1_Rpin_txt_in][case_id])
+    temp_Bpin_s1.append(data_in[s1_Bpin_txt_in][case_id])
+    temp_LE_Clearance_s1.append(data_in[s1_LE_Cl_txt_in][case_id])
+    temp_TE_Clearance_s1.append(data_in[s1_TE_Cl_txt_in][case_id])
+    # RC
+    temp_rc_crossover_ROC.append(data_in[rc_crossover_ROC][case_id])
     # s2
-    temp_Rpin_s2.append(data_in[s2_Rpin_txt_in][case_id]*data_out[impl_radius_s2_txt][irow_out])
-    temp_Bpin_s2.append(data_in[s2_Bpin_txt_in][case_id]*data_out[impl_width_s2_txt][irow_out])
-    #temp_LE_Clearance_s2.append(data_in[s2_LE_Cl_txt_in][case_id])
-    #temp_TE_Clearance_s2.append(data_in[s2_TE_Cl_txt_in][case_id])
+    temp_Rpin_s2.append(data_in[s2_Rpin_txt_in][case_id])
+    temp_Bpin_s2.append(data_in[s2_Bpin_txt_in][case_id])
+    temp_LE_Clearance_s2.append(data_in[s2_LE_Cl_txt_in][case_id])
+    temp_TE_Clearance_s2.append(data_in[s2_TE_Cl_txt_in][case_id])
 
 data_out["Rpin_s1"] = temp_Rpin_s1
 data_out["Bpin_s1"] = temp_Bpin_s1
-#data_out["LE_Clearance_s1"] = temp_LE_Clearance_s1
-#data_out["TE_Clearance_s1"] = temp_TE_Clearance_s1
+data_out["LE_Clearance_s1"] = temp_LE_Clearance_s1
+data_out["TE_Clearance_s1"] = temp_TE_Clearance_s1
+
+data_out["rc_crossover_ROC"] = temp_rc_crossover_ROC
 
 data_out["Rpin_s2"] = temp_Rpin_s2
 data_out["Bpin_s2"] = temp_Bpin_s2
-#data_out["LE_Clearance_s2"] = temp_LE_Clearance_s2
-#data_out["TE_Clearance_s2"] = temp_TE_Clearance_s2
+data_out["LE_Clearance_s2"] = temp_LE_Clearance_s2
+data_out["TE_Clearance_s2"] = temp_TE_Clearance_s2
 
 data_out_cols = data_out.columns.tolist()
 # %% Section 4: Data cleaning
@@ -270,12 +297,13 @@ input_s1_list = [i_stage1_Inlet_mass_flow,i_stage1_inlet_in_Hub_radius,i_stage1_
     i_stage1_inlet_out_Hub_radius,i_stage1_inlet_out_Shroud_radius, \
     i_stage1_impeller_RPM,i_stage1_impeller_blade_Number_of_main_blades, \
     i_stage1_impeller_in_Inclination_angle, i_stage1_impeller_blade_hubSect_TE_blade_angle, i_stage1_impeller_blade_tipSect_TE_blade_angle, \
-    #i_LE_Clearance_s1, i_TE_Clearance_s1,\
+    i_LE_Clearance_s1, i_TE_Clearance_s1,\
     i_Rpin_s1, i_Bpin_s1, i_stage1_impeller_out_Outlet_radius_avg, i_stage1_impeller_out_Outlet_width,\
     i_stage1_vaneless1_out_Avg_radius,i_stage1_vaneless1_out_Width]
     
 input_RC_list = [i_stage1_return_channel_RC_crossover_out_Avg_radius, i_stage1_return_channel_RC_crossover_out_Width, \
     i_stage1_return_channel_RC_deswirl_out_Avg_radius, i_stage1_return_channel_RC_deswirl_out_Width, \
+    i_rc_crossover_ROC, \
     i_stage1_return_channel_RC_deswirl_blade_Number_of_main_blades, \
     i_stage1_return_channel_RC_exitBend_out_Hub_radius, i_stage1_return_channel_RC_exitBend_out_Shroud_radius]
     
@@ -293,11 +321,12 @@ output_overall = [i_Machine_power,i_Machine_pressure_ratio_TS,i_Isentropic_machi
 output_s1_list = [i_stage1_Pressure_ratio_P0exP0in,i_stage1_Stage_power,i_stage1_Efficiency_isentropic_TT]
 output_s2_list = [i_stage2_Pressure_ratio_PexP0in,i_stage2_Stage_power,i_stage2_Efficiency_isentropic_TS]
 
-full_list_in_order = input_overall + input_s1_list + input_RC_list + input_s2_list + input_volute_list + \
-                      output_overall + output_s1_list + output_s2_list
+inputs = input_overall + input_s1_list + input_RC_list + input_s2_list + input_volute_list
+outputs = output_overall + output_s1_list + output_s2_list
+full_list_in_order = inputs + outputs
 
-print("Input:", len(input_overall + input_s1_list + input_RC_list + input_s2_list + input_volute_list))
-print("Output:", len(output_overall + output_s1_list + output_s2_list))
+print("Input:", len(inputs))
+print("Output:", len(outputs))
 #if(len(full_list_in_order)!=cnt+1):
     #sys.exit("some of the column in the performance table not included in the final analysis")
     
@@ -337,19 +366,6 @@ else:
     target = os.path.join(test_data_dir, "backup_s2_"+temp_str+"_"+test_data_fname+file_format)
     if(os.path.isfile(original)):
         shutil.copyfile(original, target)
-
-full_dir_batch_llist = os.path.join(train_data_dir, batch_list_fname)
-
-# Check if this batch is already added
-file1 = open(full_dir_batch_llist, 'r')
-Lines = file1.readlines()
-file1.close()
-# Strips the newline character
-for line in Lines:
-    #print(line)
-    if int(line)==batch_number:
-        sys.exit("Batch "+str(batch_number)+" is already added")
-    #print("Line{}: {}".format(count, line.strip()))
 
 file1 = open(full_dir_batch_llist, 'a')
 file1.write("\n"+str(batch_number))

@@ -35,8 +35,11 @@ import datetime
 from time import gmtime
 from time import strftime
 import shutil
+import re
 
 from get_input_parameter_range import get_input_parameter_range
+from param_bounds_s2 import get_param_bounds_np
+from param_bounds_s2 import get_col_list
 
 import matplotlib.pyplot as plt
 
@@ -87,19 +90,16 @@ def inverse_normalize_data(data):
     return data
     
 # %%
-in_col = 41
+in_col = 44
 output_dir = "model_comparison_images"
 # Three cases
 # model_ID = ["2023_07_13_17_5832","2023_07_13_19_0159","2023_07_13_20_0415"]
 # optimized model
-model_ID = ["2023_08_21_14_2432"]
-read_method  = 1
-
+model_ID = ["2023_08_25_15_0713"]
 test_data_dir = r"../testing_data_s2"
 test_data_fname = r"testing_parameters_s2.pkl" 
 
 inlet_mf_txt = "Inlet_mass_flow";
-
 
 test_full_dir = os.path.join(test_data_dir, test_data_fname)
 test_data_df = pd.read_pickle(test_full_dir)
@@ -229,7 +229,12 @@ for i in range(len(model_ID)):
     error_rel = (abs(y_test - y_pred)/y_test)
     error_rel_eta = np.array(error_rel[:,2])
     error_rel_eta = np.log((error_rel_eta))
-    input_bound_np,input_bound_df = get_input_parameter_range_s2()
+    
+    # input_bound_np,input_bound_df = get_input_parameter_range_s2()
+    #input_bound_np,units = get_param_bounds_np()
+    #col_list = get_col_list()
+    #input_bound_df = pd.DataFrame(input_bound_np,index=col_list)
+
     nCol = len(test_data_df.columns)
     for iCol in range(0,nCol-3):
         colName = test_data_df.columns[iCol]
@@ -237,12 +242,16 @@ for i in range(len(model_ID)):
         plt.scatter(test_data_df[inlet_mf_txt].values,test_data_df[colName].values, s=1, c=error_rel_eta, cmap=cm.jet, edgecolors=None)
         #plt.plot(test_data_df["Inlet mass flow"].values,test_data_df[colName].values,".", markersize=1)
         plt.xlabel("Inlet mass flow rate")
-        plt.ylabel(input_bound_df.index[iCol])
-        plt.xlim(input_bound_df.loc["Inlet mass flow"].values)
-        plt.ylim(input_bound_df.iloc[iCol].values)
-        fname = "zone_"+input_bound_df.index[iCol]+"flowrate.png"
+        #plt.ylabel(input_bound_df.index[iCol])
+        #plt.xlim(input_bound_df.loc["Mass flow rate"].values)
+        #plt.ylim(input_bound_df.iloc[iCol].values)
+        
+        ftxt_simple = test_data_df.columns[iCol]
+        ftxt_simple = ftxt_simple.replace('>','_') # removing spaces
+        ftxt_simple = ftxt_simple.replace(' ','_') # removing spaces
+        ftxt_simple = re.sub('[!,*)@#%(&$?.^-]', '', ftxt_simple) # removing special char except underscore   
+        fname = "zone_"+ftxt_simple+"flowrate.png"
         plt.savefig(r"ml_images/"+fname)
-
 
     # Plot the true vs predicted
     fig, ax2 = plt.subplots()

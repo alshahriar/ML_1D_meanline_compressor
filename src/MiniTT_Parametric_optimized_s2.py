@@ -95,7 +95,7 @@ train_full_dir = os.path.join(train_data_dir, train_data_fname)
 
 clear_current_weights = 1 # will create a backup of the existing weights
 # Inputs
-in_col = 41 #Number of input columns
+in_col = 44 #Number of input columns
 out_col = 9 #Number of output columns
 
 # Number of hidden layers
@@ -109,7 +109,7 @@ initial_weights = None #'he_uniform' #Initial guess of the model parameters
 reg = None #l1(0.0001) #regularizer
 learning_rate_user = 0.001;
 beta_1_user = 0.9
-epochs = 100000 #Number of epochs
+epochs = 10000 #Number of epochs
 # batch_size = full batch - added later in the code
 
 if len(layers)!=n_layers+2:
