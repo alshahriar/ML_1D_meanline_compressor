@@ -30,39 +30,8 @@ import numpy as np
 import pandas as pd
 # User-owned modules
 from get_input_parameter_range import get_input_parameter_range
-# %% functions
-
-def clean_data(df,efficiency_min,efficiency_max, \
-               pressure_ratio_min, pressure_ratio_max, \
-                   efficiency_txt, pressure_ratio_txt):
-    nRows_out = len(df.index)
-
-    flag_rm_eta = np.zeros(((nRows_out,1)),dtype = bool);
-    flag_rm_pr = np.zeros(((nRows_out,1)),dtype = bool);
-
-    for irow_out in range(0,nRows_out):
-        eta = df[efficiency_txt][irow_out]
-        if eta>efficiency_max:
-            flag_rm_eta[irow_out] = bool(True)
-        if eta<efficiency_min:
-            flag_rm_eta[irow_out] = bool(True)    
-
-    for irow_out in range(0,nRows_out):
-        pr = df[pressure_ratio_txt][irow_out]
-        if pr>pressure_ratio_max:
-            flag_rm_pr[irow_out] = bool(True)
-        if pr<pressure_ratio_min:
-            flag_rm_pr[irow_out] = bool(True)
-
-    flag_rm = np.logical_or(flag_rm_eta,flag_rm_pr)
-    df["Bad Samples"] = flag_rm
-    data_good = df[df["Bad Samples"] == False]
-    data_bad = df[df["Bad Samples"] == True]
-    print("Bad samples found: "+ str(len(data_bad.index)))
-    data_good = data_good.drop(["Bad Samples"],axis=1) # droping the extra column
-    data_bad = data_bad.drop(["Bad Samples"],axis=1)
-    return data_good, data_bad
-
+from clean_data import clean_data
+from clean_data_single_cond import clean_data_single_cond
 # %% Section 1: Reading old data
 batch_number = 173
 train_data_dir = r"../training_data"
@@ -84,15 +53,27 @@ data_old_test.columns = list_of_final_columns
 pressure_ratio_txt = r"Machine pressure ratio (T-S)";
 efficiency_txt = r"Isentropic machine efficiency (T-S)"
 pressure_ratio_min = 1.0;
-pressure_ratio_max = 5.0;
-efficiency_min = 0.2;
-efficiency_max = 1.00;
-data_old_train, data_out_bad_samples_train = clean_data(data_old_train,efficiency_min,efficiency_max, \
-               pressure_ratio_min, pressure_ratio_max, \
-                   efficiency_txt, pressure_ratio_txt)
-data_old_test, data_out_bad_samples_test = clean_data(data_old_test,efficiency_min,efficiency_max, \
-               pressure_ratio_min, pressure_ratio_max, \
-                   efficiency_txt, pressure_ratio_txt)
+pressure_ratio_max = 4.0;
+efficiency_min = 0.5;
+efficiency_max = 0.95;
+mf_max = 1.4
+mf_min = 0.2
+data_old_train, data_out_bad_samples_train = clean_data(data_old_train, \
+        efficiency_min,efficiency_max, \
+        pressure_ratio_min, pressure_ratio_max, \
+        efficiency_txt, pressure_ratio_txt)
+data_old_train = data_old_train.reset_index(drop=True)
+data_old_test, data_out_bad_samples_test = clean_data(data_old_test,
+        efficiency_min,efficiency_max, \
+        pressure_ratio_min, pressure_ratio_max, \
+        efficiency_txt, pressure_ratio_txt)
+data_old_test = data_old_test.reset_index(drop=True)
+
+# Additional condition on MF
+data_old_train, data_out_bad_samples_train = clean_data_single_cond(data_old_train,mf_min,mf_max,"Inlet mass flow")
+data_old_train = data_old_train.reset_index(drop=True)
+data_old_test, data_out_bad_samples_train = clean_data_single_cond(data_old_test,mf_min,mf_max,"Inlet mass flow")
+data_old_test = data_old_test.reset_index(drop=True)
 
 # %% Section 2: Saving
 file_format  = ".pkl"

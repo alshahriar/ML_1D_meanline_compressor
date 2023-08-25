@@ -1,4 +1,13 @@
 *.pptx
 *.log
-
-
+saved_variables*.*
+tt_input/batch*
+tt_input_s2/batch*
+tt_output/batch*
+testing_data/testing_parameters*
+training_data/training_*
+src/zone_*.png
+*.tml
+tt_sample/R*.tbl
+*.cbf
+.turbotides_*

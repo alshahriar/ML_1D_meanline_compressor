@@ -1,0 +1,11 @@
+{
+    "Machine power":"1d/1d_Machine/power",
+    "Machine pressure ratio (T-S)": "1d/1d_Machine/PRts",
+    "Isentropic machine efficiency (T-S)": "1d/1d_Machine/ETAts_ad",
+    "S1 Pressure ratio (P0ex/P0in)":"1d/1d_Machine/stage1/PRtt",
+    "S1 Stage power":"1d/1d_Machine/stage1/power",
+    "S1 Efficiency (isentropic T-T)":"1d/1d_Machine/stage1/ETAtt_ad",
+    "S2 Pressure ratio (Pex/P0in)":"1d/1d_Machine/stage2/PRts",
+    "S2 Stage power":"1d/1d_Machine/stage2/power",
+    "S2 Efficiency (isentropic T-S)": "1d/1d_Machine/stage2/ETAts_ad"
+}

@@ -64,10 +64,10 @@ from get_input_parameter_range import get_input_parameter_range
 # %% Section 1: Reading the data
 # Reading the inputs to TT
 # Make sure that your batch number is correct
-batch_number = 0
+batch_number = 178
 # If you want to append the current batch data to the previous batches.
 # This flag is usually True
-append_flag = bool(False);
+append_flag = bool(True);
 
 # Select the method type to handle file
 # 0: for csv file
@@ -91,13 +91,19 @@ if read_method==0:
 else:
     # if created using py script
     file_format = ".pkl"
-    data_in = pd.read_pickle(r"../tt_input/Batch_"+str(batch_number)+file_format)
+    data_in = pd.read_pickle(r"../tt_input/batch_"+str(batch_number)+file_format)
     read_method = 1
 
 # Reding the outputs of TT
 # right click on performance table - select export or save as
 data_out_raw = pd.read_csv(r"../tt_output/batch_"+str(batch_number)+".csv",index_col='Parameter').T
 
+# Do not change these folder and file names
+train_data_dir = r"../training_data"
+test_data_dir = r"../testing_data"    
+train_data_fname = "training_parameters"
+test_data_fname = "testing_parameters"
+# %%
 # Renaming the column - one column has duplicate name.
 # Check if the column numbers are matching with column titles.
 # The values tells how the columns are ordered in TT
@@ -127,9 +133,9 @@ i_TE_Clearance_out = 21;
 
 # Choose the upper bound and lower bound to filter out the data
 pressure_ratio_min = 1.0;
-pressure_ratio_max = 5.0;
+pressure_ratio_max = 4.0;
 
-efficiency_min = 0.2;
+efficiency_min = 0.5;
 efficiency_max = 0.95;
 # %% Section 2: Data formatting
 
@@ -197,11 +203,10 @@ data_out["LE Clearance"] = temp_LE_Clearance
 data_out["TE Clearance"] = temp_TE_Clearance
 data_out[TE_blade_ang_hub_txt] = temp_TE_blade_ang_hub
 data_out[TE_blade_ang_tip_txt] = temp_TE_blade_ang_tip
+#data_out["Batch"] = batch_number
 data_out_cols = data_out.columns.tolist()
 # %% Section 4: Data cleaning
-
 # Filtering out the unrealistic data
-
 nRows_out = len(data_out.index)
 
 cases_to_remove_eta_high = [];
@@ -243,8 +248,27 @@ data_out_bad_samples = data_out[data_out["Bad Samples"] == True]
 # %% get input parameter ranges
 param_ranges = get_input_parameter_range()
 
-
 # %% Section 5: Separating the testing and training data
+
+train_data_dir = r"../training_data"
+batch_list_fname = "batch_list.txt"
+full_dir_batch_llist = os.path.join(train_data_dir, batch_list_fname)
+
+# Check if this batch is already added
+file1 = open(full_dir_batch_llist, 'r')
+Lines = file1.readlines()
+file1.close()
+# Strips the newline character
+for line in Lines:
+    #print(line)
+    if int(line)==batch_number:
+        import sys
+        sys.exit("Batch "+str(batch_number)+" is already added")
+    #print("Line{}: {}".format(count, line.strip()))
+
+file1 = open(full_dir_batch_llist, 'a')
+file1.write("\n"+str(batch_number))
+file1.close()
 
 # Ordering the columns exactly the same way Krista did
 data_ordered = data_out_filtered.iloc[:, \
@@ -264,10 +288,6 @@ nTrain = int(0.8*nRows)
 data_train = data_ordered.iloc[:nTrain,:]    
 data_test = data_ordered.iloc[nTrain+1:,:]
 
-train_data_dir = r"../training_data"
-test_data_dir = r"../testing_data"    
-train_data_fname = "train_parameters"
-test_data_fname = "test_parameters"
 train_full_dir = os.path.join(train_data_dir, train_data_fname)
 test_full_dir = os.path.join(test_data_dir, test_data_fname)
 

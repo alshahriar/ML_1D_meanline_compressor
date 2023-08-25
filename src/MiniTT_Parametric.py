@@ -75,7 +75,7 @@ class LossAndErrorPrintingCallback(tf.keras.callbacks.Callback):
 
 # %% User inputs
 
-# Locations
+# Directory locations
 read_method = 1
 if read_method==0:
     train_data_dir = r"../training_data/training_batch_173.csv"
@@ -91,7 +91,6 @@ else:
     read_method  = 1
 
 clear_current_weights = 1 # will create a backup of the existing weights
-# Inputs
 in_col = 18 #Number of input columns
 out_col = 3 #Number of output columns
 
@@ -104,7 +103,7 @@ initial_weights = None #'he_uniform' #Initial guess of the model parameters
 reg = None #l1(0.0001) #regularizer
 learning_rate_user = 0.001;
 beta_1_user = 0.9
-epochs = 25000 #Number of epochs
+epochs = 50000 #Number of epochs
 # batch_size = full batch - added later in the code
 
 if len(layers)!=n_layers+2:
@@ -335,4 +334,5 @@ pickle.dump([x_trans,y_trans],file)
 pickle.dump([case_ID],file)
 pickle.dump([saved_weights_dir,saved_model_dir],file)
 pickle.dump([execution_time],file)
+pickle.dump([opt,learning_rate_user,beta_1_user],file)
 file.close()

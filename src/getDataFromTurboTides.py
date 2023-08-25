@@ -20,15 +20,20 @@ import re
 from pathlib import Path
 import json
 from TurboTides import tt
-
+import pandas as pd
 
 class GetDataFromTurboTides:
     def __init__(self):
+        self.exportData = {}
         self.TT_API = r'C:\TurboTides\gtts_api.bat'
-        self.inputJsonParametersFile = r'inputParameters.json'
+        self.inputJsonParametersFile = r'../tt_input/Batch_0.json'
         self.outputJsonParametersFile = r'OutputParameters.json'
-        self.outPutRetJsonFilePath = r'outPutRet.json'
-        self.file = r'test_api.tml'
+        self.outPutRetJsonFilePath = r'../tt_output/outPutRet.json'
+        self.file = r'../tt_sample/MiniTT_Baseline_Parameter_Study.tml'  # 'TurboTides/MiniTT_Baseline_Parameter_Study.tml'
+        with open(self.outputJsonParametersFile, "r") as f:
+            self.outdata = json.load(f)
+        with open(self.inputJsonParametersFile, "r") as f:
+            self.indata = json.load(f)
     
     def startTurboTidesWithApi(self):
         # envPath=r'C:\TurboTides\env.bat'
@@ -40,35 +45,57 @@ class GetDataFromTurboTides:
     def setParameters(self):
         tt.cdm("1D")
         # obj = tt.get_object("1d")
-        with open(self.inputJsonParametersFile, "r") as f:
-            data = json.load(f)
-        for key, value in data.items():
-            cmd = f'o=cds();o.property("{key}","{value}")'
-            tt.run_js(cmd)
-            print(cmd)
+        for key, value in self.indata.items():
+            if key not in {'Object Parameter Unit', }:
+                cmd = f'o=cds();o.property("{key}","{value[self.i]}")'
+                tt.run_js(cmd)
         solve_cmd = r'cds();o=cd("1d");o.solve()'
         tt.run_js(solve_cmd)
         return 0
-    
+
     def getParameters(self):
         tt.cdm("1D")
-        with open(self.outputJsonParametersFile, "r") as f:
-            data = json.load(f)
-        exportData = {}
-        for key, value in data.items():
-            cmd = f'o=cds();o.property("{value}")'
-            ret = tt.run_js(cmd).get('text')
-            exportData[key] = ret
-        with open(self.outPutRetJsonFilePath, 'w') as f:
-            json.dump(exportData, f)
+        for key, value in self.outdata.items():
+            if key not in {'Object Parameter Unit', }:
+                cmd = f'o=cds();o.property("{value}")'
+                ret = tt.run_js(cmd).get('text')
+                self.exportData[key].append(ret)
+            with open(self.outPutRetJsonFilePath, 'w') as f:
+                json.dump(self.exportData, f, allow_nan=True)
+
         return 0
     
     def main(self):
-        self.startTurboTidesWithApi()
-        tt.load(str(Path(self.file).absolute()), True)
-        self.setParameters()
-        self.getParameters()
-        # tt.exit()
+        numOfRun = 1000
+        num = 0
+
+        keys = self.outdata.keys()
+        for idx in keys:
+            if idx not in {'Object Parameter Unit', }:
+                self.exportData[idx] = []
+
+        for self.i in range(0, len(list(self.indata.values())[0])):
+            if num == 0:
+                self.startTurboTidesWithApi()
+                tt.load(str(Path(self.file).absolute()), True)
+                num += 1
+            elif num > numOfRun:
+                tt.exit()
+                num = 1
+                # restart and load file
+                self.startTurboTidesWithApi()
+                tt.load(str(Path(self.file).absolute()), True)
+
+            self.setParameters()
+            self.getParameters()
+
+        df = pd.DataFrame.from_dict(self.exportData)
+        df.to_pickle('pickle_test.pkl')
+
+        with open(self.outPutRetJsonFilePath, 'w') as f:
+            json.dump(self.exportData, f, allow_nan=True)
+
+        tt.exit()
         return 0
 
 

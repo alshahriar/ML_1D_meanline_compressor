@@ -87,16 +87,20 @@ def inverse_normalize_data(data):
     return data
     
 # %%
-in_col = 18
+in_col = 41
 output_dir = "model_comparison_images"
 # Three cases
 # model_ID = ["2023_07_13_17_5832","2023_07_13_19_0159","2023_07_13_20_0415"]
 # optimized model
-model_ID = ["2023_08_11_16_5507"]
+model_ID = ["2023_08_21_14_2432"]
 read_method  = 1
 
-test_data_dir = r"../testing_data"
-test_data_fname = r"testing_parameters.pkl" 
+test_data_dir = r"../testing_data_s2"
+test_data_fname = r"testing_parameters_s2.pkl" 
+
+inlet_mf_txt = "Inlet_mass_flow";
+
+
 test_full_dir = os.path.join(test_data_dir, test_data_fname)
 test_data_df = pd.read_pickle(test_full_dir)
 test_data = test_data_df.to_numpy()
@@ -150,11 +154,16 @@ for i in range(len(model_ID)):
     y_pred = y_trans.inverse_transform(y_pred_transformed)
     y_pred_best = y_trans.inverse_transform(y_pred_best_transformed)
     
+    y_test = np.asarray(y_test).astype('float32')
+    y_pred_best = np.asarray(y_pred_best).astype('float32')
+    y_pred = np.asarray(y_pred).astype('float32')
+    
     #mse = tf.keras.losses.MeanSquaredError()
     mape = tf.keras.losses.MeanAbsolutePercentageError()
     #mre = tf.keras.metrics.MeanRelativeError(y_trans)
     #print('MSE accuracy: %f' % (1-mse(y_test, y_pred).numpy()))
-    print('MAPE accuracy: {:.2f}%'.format(100- mape(y_test, y_pred_best).numpy()))
+    mape_error = mape(y_test, y_pred_best).numpy()
+    print('MAPE accuracy: {:.2f}%'.format(100- mape_error))
     #print('MRE accuracy: %f' % (1- mre(y_test, y_pred).numpy()))
     
     l2_error = np.linalg.norm(y_test - y_pred, 2)/np.linalg.norm(y_test, 2)
@@ -220,12 +229,12 @@ for i in range(len(model_ID)):
     error_rel = (abs(y_test - y_pred)/y_test)
     error_rel_eta = np.array(error_rel[:,2])
     error_rel_eta = np.log((error_rel_eta))
-    input_bound_np,input_bound_df = get_input_parameter_range()
+    input_bound_np,input_bound_df = get_input_parameter_range_s2()
     nCol = len(test_data_df.columns)
     for iCol in range(0,nCol-3):
         colName = test_data_df.columns[iCol]
         plt.figure()
-        plt.scatter(test_data_df["Inlet mass flow"].values,test_data_df[colName].values, s=1, c=error_rel_eta, cmap=cm.jet, edgecolors=None)
+        plt.scatter(test_data_df[inlet_mf_txt].values,test_data_df[colName].values, s=1, c=error_rel_eta, cmap=cm.jet, edgecolors=None)
         #plt.plot(test_data_df["Inlet mass flow"].values,test_data_df[colName].values,".", markersize=1)
         plt.xlabel("Inlet mass flow rate")
         plt.ylabel(input_bound_df.index[iCol])

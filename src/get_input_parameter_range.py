@@ -21,7 +21,7 @@ __status__ = "Pre-production"
 
 # %%
 import numpy as np
-
+import pandas as pd
 def get_input_parameter_range():
     # stage 1
     TE_blade_ang_hub_s1 = [-60, 15]
@@ -92,4 +92,29 @@ def get_input_parameter_range():
                              rpm,                       # 16
                              mass_flow_rate,            # 17
                              ])
-    return param_ranges
+    
+    with open('list_of_final_columns.txt') as f:
+        list_of_final_columns = [line.rstrip('\n') for line in f]
+    
+    # parameter ranges in correct order, comma separated
+    df = pd.DataFrame()
+    df[list_of_final_columns[0]] = mass_flow_rate
+    df[list_of_final_columns[1]] = rpm
+    df[list_of_final_columns[2]] = number_of_main_blades_s1
+    df[list_of_final_columns[3]] = TE_blade_ang_hub_s1 
+    df[list_of_final_columns[4]] = TE_blade_ang_tip_s1
+    df[list_of_final_columns[5]] = LE_Clearance_s1
+    df[list_of_final_columns[6]] = TE_Clearance_s1
+    df[list_of_final_columns[7]] = inlet_inclination_ang_s1
+    df[list_of_final_columns[8]] = inlet_hub_rad_s1
+    df[list_of_final_columns[9]] = shroud_rad_s1
+    df[list_of_final_columns[10]] = impeller_outlet_rad_s1
+    df[list_of_final_columns[11]] = impeller_outlet_width_s1
+    df[list_of_final_columns[12]] = Rpin_s1
+    df[list_of_final_columns[13]] = Bpin_s1
+    df[list_of_final_columns[14]] = outlet_avg_rad_s1
+    df[list_of_final_columns[15]] = outlet_avg_width_s1
+    df[list_of_final_columns[16]] = volute_throat_area
+    df[list_of_final_columns[17]] = volute_exit_pipe_dia
+    df = df.T
+    return param_ranges, df

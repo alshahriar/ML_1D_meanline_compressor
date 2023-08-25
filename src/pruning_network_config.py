@@ -70,19 +70,14 @@ output_dir = "model_comparison_images"
 # Three cases
 # model_ID = ["2023_07_13_17_5832","2023_07_13_19_0159","2023_07_13_20_0415"]
 # optimized model
-model_ID = ["2023_07_14_09_2440"]
-nEpochMax = 25000
-
-epoch = np.zeros([nEpochMax,len(model_ID)])
-accuracy = np.zeros([nEpochMax,len(model_ID)])
-losses = np.zeros([nEpochMax,len(model_ID)])
+model_ID = ["2023_08_07_11_4941"]
 
 # %% Load model and calclate accuracy
 
 
 for i in range(len(model_ID)):
     case_ID = model_ID[i]
-    #print(case_ID)
+    # print(case_ID)
 
     file = open("saved_variables_"+case_ID+".pickle", 'rb')
     [train_data_dir,test_data_dir,train_data_fname,test_data_fname] = pickle.load(file)
@@ -97,7 +92,7 @@ for i in range(len(model_ID)):
     
     log_file_name = "training_"+case_ID+".log"
     for j in range(len(model.layers)):
-        
+        print(j)
         # Weights
         Z = abs(model.layers[j].get_weights()[0])
         x = np.arange(0,Z.shape[1]+1,1)
@@ -108,12 +103,10 @@ for i in range(len(model_ID)):
         plt.set_cmap('Reds')
         plt.colorbar(pc1)
         plt.savefig(os.path.join(r"pruning","model_"+(case_ID)+"_weights_"+str(j)+r".png"))
-        plt.close()
         
         # Biases
         bb = abs(model.layers[j].get_weights()[1])
         plt.plot(bb)
         plt.savefig(os.path.join(r"pruning","model_"+(case_ID)+"_biases_"+str(j)+r".png"))
-        plt.close()
         
         
