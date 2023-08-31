@@ -9,7 +9,7 @@ __maintainer__ = "Al Shahriar"
 __email__ = "al.shahriar@danfoss.com"
 __status__ = "Pre-production"
 
-"""Detail description of TT_post_process.py
+"""Detail description
 
 @Usage:
     Minimum and maximu range for each input parameters (features)

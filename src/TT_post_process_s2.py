@@ -88,6 +88,8 @@ s2_Bpin_txt_in = r"stage2->vaneless1->Bpin"
 s2_LE_Cl_txt_in = r"stage2->impeller->blade->LE->LE Clearance"
 s2_TE_Cl_txt_in = r"stage2->impeller->blade->TE->TE Clearance"
 
+RPM_txt_in = "Rotational speed"
+
 # %%
 # Renaming the column - one column has duplicate name.
 # Check if the column numbers are matching with column titles.
@@ -221,7 +223,7 @@ impl_width_s1_txt = data_out_cols[i_stage1_impeller_out_Outlet_width]
 diff_radius_s1_txt = data_out_cols[i_stage1_vaneless1_out_Avg_radius]
 diff_width_s1_txt = data_out_cols[i_stage1_vaneless1_out_Width]
 
-# for Rpin Bpin conversion
+# for Rpin Bpin conversion - not needed anymore
 impl_radius_s2_txt = data_out_cols[i_stage2_impeller_out_Outlet_radius_avg]
 impl_width_s2_txt = data_out_cols[i_stage2_impeller_out_Outlet_width]
 diff_radius_s2_txt = data_out_cols[i_stage2_vaneless1_out_Avg_radius]
@@ -231,6 +233,8 @@ diff_width_s2_txt = data_out_cols[i_stage2_vaneless1_out_Width]
 # It returns a column with the case number added to a string for successful runs.
 # We compare the input case number and output case number to figure out which
 # one fails.
+
+temp_RPM = [];
 
 temp_Rpin_s1 = [];
 temp_Bpin_s1 = [];
@@ -250,6 +254,7 @@ for irow_out in range(0,nRows_out):
     row_out = data_out.index[irow_out]
     case_id_txt = (row_out[18:len(row_out)])
     case_id = int(case_id_txt)-1
+    temp_RPM.append(data_in[RPM_txt_in][case_id])
     #s1
     temp_Rpin_s1.append(data_in[s1_Rpin_txt_in][case_id])
     temp_Bpin_s1.append(data_in[s1_Bpin_txt_in][case_id])
@@ -262,6 +267,9 @@ for irow_out in range(0,nRows_out):
     temp_Bpin_s2.append(data_in[s2_Bpin_txt_in][case_id])
     temp_LE_Clearance_s2.append(data_in[s2_LE_Cl_txt_in][case_id])
     temp_TE_Clearance_s2.append(data_in[s2_TE_Cl_txt_in][case_id])
+
+data_out[data_out_cols[i_stage1_impeller_RPM]] = temp_RPM
+data_out[data_out_cols[i_stage2_impeller_RPM]] = temp_RPM
 
 data_out["Rpin_s1"] = temp_Rpin_s1
 data_out["Bpin_s1"] = temp_Bpin_s1

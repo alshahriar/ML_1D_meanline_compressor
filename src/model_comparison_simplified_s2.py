@@ -9,7 +9,7 @@ __maintainer__ = "Al Shahriar"
 __email__ = "al.shahriar@danfoss.com"
 __status__ = "Pre-production"
 
-"""Detail description of TT_post_process.py
+"""Detail description
 
 @Usage:
     Comparing the accuracy of  different trained model
@@ -187,6 +187,10 @@ for i in range(len(model_ID)):
     plt.ylabel('$\eta$ (T-S)')
     fig.savefig(r'ml_images/etaTS.png')
 
+    with open('list_of_final_columns_s2_plot.txt') as f:
+        list_of_final_columns = [line.rstrip('\n') for line in f]
+
+# %% error analysis
     error_txt = ["PR","Power","efficiency"]
     for error_index in range(0,3):
         errtxt = error_txt[error_index]
@@ -195,34 +199,33 @@ for i in range(len(model_ID)):
         error_rel = (abs(y_test - y_pred)/y_test)
         # error is eta
         error_rel_eta = np.array(error_rel[:,error_index])
-        error_rel_eta = np.log((error_rel_eta))
+        #error_rel_eta = np.log((error_rel_eta))
         plt.scatter(x_test[:,0],y_test[:,2], s=1, c=error_rel_eta, cmap=cm.jet, edgecolors=None)
         plt.colorbar(label="error: "+errtxt, orientation="vertical")
         plt.xlabel('mass flow rate [kg/s]')
-        plt.ylabel('$\eta$ (T-S)')
+        plt.ylabel('Efficiency (T-S)')
         fig.savefig(r'ml_images/error'+errtxt+r'_etaTS_colored.png')
     
         # Colored error: MF vs PR
         fig, ax2 = plt.subplots()
         error_rel = (abs(y_test - y_pred)/y_test)
         error_rel_eta = np.array(error_rel[:,error_index])
-        error_rel_eta = np.log((error_rel_eta))
+        #error_rel_eta = np.log((error_rel_eta))
         plt.scatter(x_test[:,0],y_test[:,0], s=1, c=error_rel_eta, cmap=cm.jet, edgecolors=None)
         plt.colorbar(label="error: "+errtxt, orientation="vertical")
         plt.xlabel('mass flow rate [kg/s]')
-        plt.ylabel('PR (T-S)')
+        plt.ylabel('Power')
         fig.savefig(r'ml_images/error'+errtxt+r'_PRTS_colored.png')
-        
-        
+                
         # Colored error: MF vs Power
         fig, ax2 = plt.subplots()
         error_rel = (abs(y_test - y_pred)/y_test)
         error_rel_eta = np.array(error_rel[:,error_index])
-        error_rel_eta = np.log((error_rel_eta))
+        #error_rel_eta = np.log((error_rel_eta))
         plt.scatter(x_test[:,0],y_test[:,1], s=1, c=error_rel_eta, cmap=cm.jet, edgecolors=None)
         plt.colorbar(label="error: "+errtxt, orientation="vertical")
         plt.xlabel('mass flow rate [kg/s]')
-        plt.ylabel('Power')
+        plt.ylabel('PR (TS)')
         fig.savefig(r'ml_images/error'+errtxt+r'_Power_colored.png')
 
 
@@ -235,6 +238,7 @@ for i in range(len(model_ID)):
     #col_list = get_col_list()
     #input_bound_df = pd.DataFrame(input_bound_np,index=col_list)
 
+
     nCol = len(test_data_df.columns)
     for iCol in range(0,nCol-3):
         colName = test_data_df.columns[iCol]
@@ -242,12 +246,12 @@ for i in range(len(model_ID)):
         plt.scatter(test_data_df[inlet_mf_txt].values,test_data_df[colName].values, s=1, c=error_rel_eta, cmap=cm.jet, edgecolors=None)
         #plt.plot(test_data_df["Inlet mass flow"].values,test_data_df[colName].values,".", markersize=1)
         plt.xlabel("Inlet mass flow rate")
-        #plt.ylabel(input_bound_df.index[iCol])
+        plt.ylabel(list_of_final_columns[iCol])
         #plt.xlim(input_bound_df.loc["Mass flow rate"].values)
         #plt.ylim(input_bound_df.iloc[iCol].values)
         
         ftxt_simple = test_data_df.columns[iCol]
-        ftxt_simple = ftxt_simple.replace('>','_') # removing spaces
+        ftxt_simple = ftxt_simple.replace('>','_')
         ftxt_simple = ftxt_simple.replace(' ','_') # removing spaces
         ftxt_simple = re.sub('[!,*)@#%(&$?.^-]', '', ftxt_simple) # removing special char except underscore   
         fname = "zone_"+ftxt_simple+"flowrate.png"
@@ -260,8 +264,8 @@ for i in range(len(model_ID)):
     ax2.plot(x_test[:,0],y_pred_best[:,0],".", markersize=1,label='Predicted')
     ax2.legend()
     plt.xlabel('mass flow rate [kg/s]')
-    plt.ylabel('PR (T-S)')
-    fig.savefig(r'ml_images/PRTS.png')
+    plt.ylabel('Power')
+    fig.savefig(r'ml_images/Power.png',dpi=300)
 
     # Plot the true vs predicted
     fig, ax2 = plt.subplots()
@@ -270,8 +274,18 @@ for i in range(len(model_ID)):
     ax2.plot(x_test[:,0],y_pred_best[:,1],".", markersize=1,label='Predicted')
     ax2.legend()
     plt.xlabel('mass flow rate [kg/s]')
-    plt.ylabel('Power [W]')
-    fig.savefig(r'ml_images/Power.png')    
+    plt.ylabel('PR (TS)')
+    fig.savefig(r'ml_images/PRTS.png',dpi=300)
+
+    # Plot the true vs predicted
+    fig, ax2 = plt.subplots()
+    #ax2.plot(x_train[:,1],y_train[:,0],'o',label='Training points')
+    ax2.plot(x_test[:,0],y_test[:,2],".", markersize=1,label='True')
+    ax2.plot(x_test[:,0],y_pred_best[:,2],".", markersize=1,label='Predicted')
+    ax2.legend()
+    plt.xlabel('mass flow rate [kg/s]')
+    plt.ylabel('Efficiency')
+    fig.savefig(r'ml_images/effi.png',dpi=300)
     
     #plt.figure(1)
     #df.plot.line(x = "epoch",y="accuracy")

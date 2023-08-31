@@ -15,10 +15,10 @@ def get_param_bounds_np():
     stage1_impeller_out_outlet_width = [0.004098, 0.005009]
     
     # Diffuser stage 1
-    stage1_vaneless1_Rpin = [0.03235, 0.039538]
+    stage1_vaneless1_Rpin = [0.03635, 0.057538]
     stage1_vaneless1_Bpin = [0.004098, 0.005009]
     stage1_vaneless1_outlet_rad = [0.061748, 0.07547]
-    stage1_vaneless1_outlet_width = [0.0025, 0.0035]
+    stage1_vaneless1_outlet_width = [0.002, 0.004]
     
     # Return channel
     stage1_return_channel_rc_crossover_roc = [0.0035, 0.0045]
